@@ -4,7 +4,7 @@ import {} from "koishi-plugin-canvas";
 
 const pattern = ['','😀','❤','💎','⚡','👻','🐴','🐇']
 
-export async function draw(session: Session, table: Table, ...points: Point[]) {
+export async function draw(session: Session, table: Table, ...points: Point[]):Promise<string> {
   const canvas = await session.app.canvas.createCanvas(
     (table.xLength + 2) * 100,
     (table.yLength + 2) * 100
@@ -15,10 +15,12 @@ export async function draw(session: Session, table: Table, ...points: Point[]) {
 
   for (let i = 0; i < table.xLength; i++) {
     for (let j = 0; j < table.yLength; j++) {
-      if (table[i][j]) {
+      if (table.squares[i][j]) {
         ctx.fillStyle = "white";
         ctx.fillRect((i + 1) * 100 + 5, (j + 1) * 100 + 5 , 90, 90);
-        ctx.fillText(pattern[table[i][j]], (i + 1) * 100 + 45, (j + 1) * 100 + 55);
+
+        ctx.font = "40px";
+        ctx.fillText(pattern[table.squares[i][j]], (i + 1) * 100 + 25, (j + 1) * 100 + 65);
       }
     }
   }
@@ -31,4 +33,5 @@ export async function draw(session: Session, table: Table, ...points: Point[]) {
     }
   }
 
+  return canvas.toDataURL("image/png");
 }

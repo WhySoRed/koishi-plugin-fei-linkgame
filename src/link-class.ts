@@ -40,6 +40,7 @@ export class Table {
   squares: number[][];
   
   constructor(xLength: number, yLength: number, patternRangeLength?: number) {
+    if(xLength* yLength % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
     if (patternRangeLength) {
@@ -50,11 +51,21 @@ export class Table {
 
   // 初始化
   init(): number[][] {
+    let patternList: number[] = [];
+    for (let i = 0; i < this.xLength * this.yLength / 2; i++) {
+      const pattern = Math.floor(Math.random() * (this.patternRangeLength)) + 1;
+      patternList.push(pattern);
+      patternList.push(pattern);
+    }
+
+    const random = new Random();
+    patternList = random.shuffle(patternList);
+
     const squares: number[][] = [];
     for (let x = 0; x < this.xLength; x++) {
       squares[x] = [];
       for (let y = 0; y < this.yLength; y++) {
-        squares[x][y] = Math.floor(Math.random() * (this.patternRangeLength)) + 1;
+        squares[x][y] = patternList.pop();
       }
     }
     return squares;
