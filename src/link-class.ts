@@ -1,4 +1,4 @@
-import { table } from "console";
+import { BlobOptions } from "buffer";
 import { Random } from "koishi";
 
 export class Point {
@@ -36,7 +36,7 @@ class Node extends Point {
 export class Table {
   xLength: number;
   yLength: number;
-  patternRangeLength: number = 5;
+  patternRangeLength: number = 7;
   squares: number[][];
   
   constructor(xLength: number, yLength: number, patternRangeLength?: number) {
@@ -51,14 +51,29 @@ export class Table {
 
   // 初始化
   init(): number[][] {
+    const random = new Random();
+
+    
+
+    function randomArr(length:number) {
+      for (let i = 0; i < length; i++) {
+        patternList.push(i + 1);
+      }
+      return random.shuffle(patternList);
+    }
+
     let patternList: number[] = [];
+    let patternCreateArr = randomArr(this.patternRangeLength);
+
     for (let i = 0; i < this.xLength * this.yLength / 2; i++) {
-      const pattern = Math.floor(Math.random() * (this.patternRangeLength)) + 1;
-      patternList.push(pattern);
+      if (patternCreateArr.length === 0) {
+        patternCreateArr = randomArr(this.patternRangeLength);
+      }
+      const pattern = randomArr(this.patternRangeLength).pop();
       patternList.push(pattern);
     }
 
-    const random = new Random();
+    patternList = patternList.concat(patternList);
     patternList = random.shuffle(patternList);
 
     const squares: number[][] = [];
@@ -93,15 +108,18 @@ export class Table {
   
   // 检查是否存在三条直线可以连接的通路
   checkPath(p1: Point, p2: Point):Path {
-
     if (p1.x === p2.x && p1.y === p2.y) {
       return new Path(false, null, "位置重复");
     }
     if (
-      p1.x < 0 || p1.x > this.xLength ||
-      p2.x < 0 || p2.x > this.xLength ||
-      p1.y < 0 || p1.y > this.yLength ||
-      p2.y < 0 || p2.y > this.yLength
+      p1.x < 0 ||
+      p1.x > this.xLength ||
+      p2.x < 0 ||
+      p2.x > this.xLength ||
+      p1.y < 0 ||
+      p1.y > this.yLength ||
+      p2.y < 0 ||
+      p2.y > this.yLength
     ) {
       return new Path(false, null, "位置超出范围");
     }
@@ -127,55 +145,71 @@ export class Table {
       }
     }
 
+    // 最大折线数 
+    const maxLevel =
+    (p1.x === 0 && p2.y === 0) ||
+    (p1.x === 0 && p2.y === this.yLength - 1) ||
+      (p1.x === this.xLength - 1 && p2.y === 0) ||
+      (p1.x === this.xLength - 1 && p2.y === this.yLength - 1) ||
+      (p2.x === 0 && p1.y === 0) ||
+      (p2.x === 0 && p1.y === this.yLength - 1) ||
+      (p2.x === this.xLength - 1 && p1.y === 0) ||
+      (p2.x === this.xLength - 1 && p1.y === this.yLength - 1)
+      ? 3   //如果有一点在边缘则允许更大范围的搜索
+      : 2;  //否则超过三次折线则停止
+      
     const visited: boolean[][] = []; // 记录是否访问过
     const nodeQueue: Node[] = []; // 建立一个队列
     let nodeQueueIndex = 0; // 队列的下标
 
     nodeQueue.push(new Node(startX, startY)); // 将起点加入队列
 
-    while (nodeQueue.length) {
-      const currentNode = nodeQueue[nodeQueueIndex++];
-      if(currentNode.level > 2) break;   // 超过三层则停止
-      if(currentNode.x === endX && currentNode.y === endY) {
-        const points: Point[] = [];
-        let node: Node = currentNode;
-        while(node.parent) {
-          points.push(new Point(node.x, node.y));
-          node = node.parent;
-        }
-        points.push(new Point(node.x, node.y));
-        return new Path(true, points.reverse(), "找到通路");
+    let linkPath = new Path(false, null, "没有通路");
+
+    // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
+    function nodeSearch(x: number, y: number,currentNode: Node): boolean {
+      if (!visited[x][y]) {
+        if (this.squares[x - 1][y - 1] !== 0) {
+          if (x === endX && y === endY) {
+              const points: Point[] = [];
+              let node: Node = currentNode;
+              while (node.parent) {
+                points.push(new Point(node.x, node.y));
+                node = node.parent;
+              }
+              points.push(new Point(node.x, node.y));
+              linkPath =  new Path(true, points.reverse(), "找到通路");
+            return true;
+          }
+        } else
+          nodeQueue.push(new Node(x, y, currentNode.level + 1, currentNode));
       }
+      visited[x][y] = true;
+      return false;
+    }
+
+    // 以队列循环搜索
+    end:while (nodeQueue.length) {
+      const currentNode = nodeQueue[nodeQueueIndex++];
+      if (currentNode.level > maxLevel) break;
 
       // 向四个方向延伸
       const x = currentNode.x;
       const y = currentNode.y;
       for (let i = x; i < this.xLength + 2; i++) {
-        if (!visited[i][y]) {
-          nodeQueue.push(new Node(i, y, currentNode.level + 1, currentNode));
-        }
-        visited[i][y] = true;
+        if(nodeSearch(i, y, currentNode)) break end;
       }
       for (let i = x; i >= 0; i--) {
-        if (!visited[i][y]) {
-          nodeQueue.push(new Node(i, y, currentNode.level + 1, currentNode));
-        }
-        visited[i][y] = true;
+        if(nodeSearch(i, y, currentNode)) break end;
       }
       for (let i = y; i < this.yLength + 2; i++) {
-        if (!visited[x][i]) {
-          nodeQueue.push(new Node(x, i, currentNode.level + 1, currentNode));
-        }
-        visited[x][i] = true;
+        if(nodeSearch(x, i, currentNode)) break end;
       }
       for (let i = y; i >= 0; i--) {
-        if (!visited[x][i]) {
-          nodeQueue.push(new Node(x, i, currentNode.level + 1, currentNode));
-        }
-        visited[x][i] = true;
+        if(nodeSearch(x, i, currentNode)) break end;
       }
     }
-    return new Path(false, null, "没有通路");
+    return linkPath;
   }
 
 }

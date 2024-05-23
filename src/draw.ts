@@ -13,13 +13,14 @@ export async function draw(session: Session, table: Table, ...points: Point[]):P
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  ctx.fillStyle = "white";
+  ctx.font = "40px";
   for (let i = 0; i < table.xLength; i++) {
+    ctx.fillText(i + 1 + "", (i + 1) * 100 + 40, 70);
     for (let j = 0; j < table.yLength; j++) {
+      ctx.fillText(j + 1 + "", 40, (j + 1) * 100 + 70);
       if (table.squares[i][j]) {
-        ctx.fillStyle = "white";
         ctx.fillRect((i + 1) * 100 + 5, (j + 1) * 100 + 5 , 90, 90);
-
-        ctx.font = "40px";
         ctx.fillText(pattern[table.squares[i][j]], (i + 1) * 100 + 25, (j + 1) * 100 + 65);
       }
     }
@@ -32,6 +33,5 @@ export async function draw(session: Session, table: Table, ...points: Point[]):P
       ctx.lineTo((points[i].x + 1) * 100 + 50, (points[i].y + 1) * 100 + 50);
     }
   }
-
   return canvas.toDataURL("image/png");
 }
