@@ -1,5 +1,5 @@
 import { Context, Schema, h } from 'koishi'
-import { Table as LinkTable } from './link-class'
+import { Table as LinkTable, Point as LinkPoint } from './link-class'
 import { draw as linkGameDraw} from './draw'
 
 export const name = 'link-game-demo'
@@ -15,5 +15,20 @@ export function apply(ctx: Context) {
   .action(async ({ session }) => {
     const imgUrl = await linkGameDraw(session, table);
     session.send(h.img(imgUrl));
+  })
+
+  ctx.command('link测试2')
+  .action(async ({ session, args }) => {
+    const p1 = new LinkPoint(
+      Math.floor(+args[0] - 1),
+      Math.floor(+args[1] - 1)
+    );
+    const p2 = new LinkPoint(
+      Math.floor(+args[2] - 1),
+      Math.floor(+args[3] - 1)
+    );
+    
+    const linkPath = table.checkPath(p1,p2);
+    console.log('lp:'+ JSON.stringify(linkPath));
   })
 }
