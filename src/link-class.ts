@@ -23,12 +23,12 @@ export class Path {
 }
 
 class Node extends Point {
-  parent?: Node;
   level: number = 0;
+  parent?: Node;
   constructor(x: number, y: number, level?: number, parent?: Node) {
     super(x, y);
-    this.level = level;
-    this.parent = parent;
+    if (level) this.level = level;
+    if (parent) this.parent = parent;
   }
 }
 
@@ -105,6 +105,7 @@ export class Table {
 
   // 检查是否存在三条直线可以连接的通路
   checkPath(p1: Point, p2: Point): Path {
+
     if (p1.x === p2.x && p1.y === p2.y) {
       return new Path(false, null, "位置重复");
     }
@@ -163,7 +164,6 @@ export class Table {
       }
     }
     const nodeQueue: Node[] = []; // 建立一个队列
-    let nodeQueueIndex = 0; // 队列的下标
 
     nodeQueue.push(new Node(startX, startY)); // 将起点加入队列
 
@@ -179,15 +179,16 @@ export class Table {
           node = node.parent;
         }
         points.push(new Point(node.x, node.y));
-        linkPath = new Path(true, points.reverse(), "找到通路");
+        points.reverse().push(new Point(endX,endY))
+        linkPath = new Path(true, points, "找到通路");
         return true;
       }
       return false;
     };
 
     // 以队列循环搜索
-    end: while (nodeQueue.length !== nodeQueueIndex) {
-      const currentNode = nodeQueue[nodeQueueIndex++];
+    end: while (nodeQueue.length) {
+      const currentNode = nodeQueue.shift();
       if (currentNode.level > maxLevel) break;
       console.log("nq:" + JSON.stringify(currentNode));
       // 向四个方向延伸

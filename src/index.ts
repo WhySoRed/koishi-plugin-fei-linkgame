@@ -27,8 +27,9 @@ export function apply(ctx: Context) {
       Math.floor(+args[2] - 1),
       Math.floor(+args[3] - 1)
     );
-    
     const linkPath = table.checkPath(p1,p2);
     console.log('lp:'+ JSON.stringify(linkPath));
+    const imgUrl = await linkGameDraw(session, table, ...linkPath.points);
+    session.send(h.img(imgUrl));
   })
 }

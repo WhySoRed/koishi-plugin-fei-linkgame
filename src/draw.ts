@@ -25,15 +25,14 @@ export async function draw(session: Session, table: Table, ...points: Point[]):P
       }
     }
   }
-
-  console.log(points);
+  
   if (points.length) {
     ctx.strokeStyle = "red";
     ctx.lineWidth = 10;
 
-    ctx.moveTo((points[0].x + 1) * 100 + 50, (points[0].y + 1) * 100 + 50);
+    ctx.moveTo((points[0].x) * 100 + 50, (points[0].y) * 100 + 50);
     for (let i = 1; i < points.length; i++) {
-      ctx.lineTo((points[i].x + 1) * 100 + 50, (points[i].y + 1) * 100 + 50);
+      ctx.lineTo((points[i].x) * 100 + 50, (points[i].y) * 100 + 50);
       ctx.stroke();
     }
   }
