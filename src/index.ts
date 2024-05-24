@@ -1,5 +1,9 @@
 import { Context, Random, Schema, Session, h } from "koishi";
-import { Table as LinkTable, Point as LinkPoint } from "./linkGame";
+import {
+  Table as LinkTable,
+  Point as LinkPoint,
+  PathInfo as LinkPathInfo,
+} from "./linkGame";
 import {
   draw as linkGameDraw,
   drawWin as winLinkGameDraw,
@@ -181,14 +185,73 @@ export function apply(ctx: Context, config: Config) {
           session.content.startsWith("连") &&
           !session.content.startsWith("连连看")
         ) {
-          session.execute(
-            "连连看.连 " +
-              session.content
-                .slice(1)
-                .split(" ")
-                .filter((v) => v !== "")
-                .join(" ")
+          const args = session.content.split(" ").filter((v) => v !== "");
+          const pathInfoArr: LinkPathInfo[] = [];
+          const removeArr: [LinkPoint, LinkPoint][] = [];
+          while (args.length > 2) {
+            if (args[0] !== "连") break;
+            args.shift();
+            const p1 = new LinkPoint(
+              Math.floor(+args[0] / channelGame.table.yLength) + 1,
+              (Math.floor(+args[0]) % channelGame.table.yLength) + 1
+            );
+            const p2 = new LinkPoint(
+              Math.floor(+args[1] / channelGame.table.yLength) + 1,
+              (Math.floor(+args[1]) % channelGame.table.yLength) + 1
+            );
+            args.shift();
+            args.shift();
+            if (
+              removeArr.find(
+                (v) =>
+                  (v[0].x === p1.x && v[0].y === p1.y) ||
+                  (v[1].x === p2.x && v[1].y === p2.y) ||
+                  (v[0].x === p2.x && v[0].y === p2.y) ||
+                  (v[1].x === p1.x && v[1].y === p1.y)
+              )
+            )
+              continue;
+            const pathInfo = channelGame.table.checkPath(config, p1, p2);
+            if (pathInfo.enableLink) {
+              pathInfoArr.push(pathInfo);
+              removeArr.push([p1, p2]);
+            }
+          }
+          const imgUrl1 = await linkGameDraw(
+            session,
+            config,
+            channelGame.patterns,
+            channelGame.table,
+            pathInfoArr.map((v) => v.linkPath)
           );
+          await session.send(h.img(imgUrl1));
+          for (const [p1, p2] of removeArr) {
+            channelGame.table.remove(p1, p2);
+          }
+          if (channelGame.table.isClear) {
+            channelGame.isPlaying = false;
+            channelGame.listener && channelGame.listener();
+            const imgUrl = await winLinkGameDraw(session, config);
+            session.send(h.img(imgUrl));
+            session.send("所有的图案都被消除啦~");
+          } else {
+            const imgUrl2 = await linkGameDraw(
+              session,
+              config,
+              channelGame.patterns,
+              channelGame.table
+            );
+            await session.send(h.img(imgUrl2));
+          }
+
+          // session.execute(
+          //   "连连看.连 " +
+          //     session.content
+          //       .slice(1)
+          //       .split(" ")
+          //       .filter((v) => v !== "")
+          //       .join(" ")
+          // );
         }
       });
     const random = new Random();
