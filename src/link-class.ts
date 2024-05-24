@@ -1,5 +1,9 @@
-import { BlobOptions } from "buffer";
 import { Random } from "koishi";
+
+const IS_EMPTY = 0;
+const IS_TARGET = 1;
+const IS_OTHER_PATTERN = 2;
+type Square = 0 | 1 | 2;
 
 export class Point {
   x: number;
@@ -11,13 +15,13 @@ export class Point {
 }
 
 // 作为table.checkPath的返回值
-export class Path {
+export class PathInfo {
   enableLink: boolean;
-  points?: Point[];
+  linkPath?: Point[];
   text?: string;
-  constructor(enableLink: boolean, points?: Point[], text?: string) {
+  constructor(enableLink: boolean, linkPath?: Point[], text?: string) {
     this.enableLink = enableLink;
-    this.points = points;
+    this.linkPath = linkPath;
     this.text = text;
   }
 }
@@ -103,11 +107,20 @@ export class Table {
     }
   }
 
+  remove(p1: Point, p2: Point) {
+    if (this.squares[p1.x][p1.y] === this.squares[p2.x][p2.y]) {
+      this.squares[p1.x][p1.y] = IS_EMPTY;
+      this.squares[p2.x][p2.y] = IS_EMPTY;
+    }
+
+  }
+
+
   // 检查是否存在三条直线可以连接的通路
-  checkPath(p1: Point, p2: Point): Path {
+  checkPath(p1: Point, p2: Point): PathInfo {
 
     if (p1.x === p2.x && p1.y === p2.y) {
-      return new Path(false, null, "位置重复");
+      return new PathInfo(false, null, "位置重复");
     }
     if (
       p1.x < 0 ||
@@ -119,10 +132,10 @@ export class Table {
       p2.y < 0 ||
       p2.y > this.yLength
     ) {
-      return new Path(false, null, "位置超出范围");
+      return new PathInfo(false, null, "位置超出范围");
     }
 
-    const tempCheckTable: number[][] = [];
+    const pathCheckTable: number[][] = [];
     const startX: number = p1.x + 1;
     const startY: number = p1.y + 1;
     const endX: number = p2.x + 1;
@@ -130,7 +143,7 @@ export class Table {
 
     // 建立一个扩大一圈的检查路径的表格
     for (let x = 0; x < this.xLength + 2; x++) {
-      tempCheckTable[x] = [];
+      pathCheckTable[x] = [];
       for (let y = 0; y < this.yLength + 2; y++) {
         if (
           x === 0 ||
@@ -138,8 +151,8 @@ export class Table {
           y === 0 ||
           y === this.yLength + 1
         ) {
-          tempCheckTable[x][y] = 0;
-        } else tempCheckTable[x][y] = this.squares[x - 1][y - 1];
+          pathCheckTable[x][y] = 0;
+        } else pathCheckTable[x][y] = this.squares[x - 1][y - 1];
       }
     }
 
@@ -167,20 +180,20 @@ export class Table {
 
     nodeQueue.push(new Node(startX, startY)); // 将起点加入队列
 
-    let linkPath = new Path(false, null, "没有通路");
+    let linkPathInfo = new PathInfo(false, null, "没有通路");
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
     const checkTarget = (x: number, y: number, currentNode: Node): boolean => {
       if (x === endX && y === endY) {
-        const points: Point[] = [];
+        const linkPath: Point[] = [];
         let node: Node = currentNode;
         while (node.parent) {
-          points.push(new Point(node.x, node.y));
+          linkPath.push(new Point(node.x, node.y));
           node = node.parent;
         }
-        points.push(new Point(node.x, node.y));
-        points.reverse().push(new Point(endX,endY))
-        linkPath = new Path(true, points, "找到通路");
+        linkPath.push(new Point(node.x, node.y));
+        linkPath.reverse().push(new Point(endX,endY))
+        linkPathInfo = new PathInfo(true, linkPath, "找到通路");
         return true;
       }
       return false;
@@ -190,13 +203,12 @@ export class Table {
     end: while (nodeQueue.length) {
       const currentNode = nodeQueue.shift();
       if (currentNode.level > maxLevel) break;
-      console.log("nq:" + JSON.stringify(currentNode));
       // 向四个方向延伸
       const x = currentNode.x;
       const y = currentNode.y;
       for (let i = x + 1; i < this.xLength + 2; i++) {
         if (!visited[i][y]) {
-          if (tempCheckTable[i][y] !== 0) {
+          if (pathCheckTable[i][y] !== 0) {
             if (checkTarget(i, y, currentNode)) break end;
             else break;
           } else
@@ -206,7 +218,7 @@ export class Table {
       }
       for (let i = x - 1; i >= 0; i--) {
         if (!visited[i][y]) {
-          if (tempCheckTable[i][y] !== 0) {
+          if (pathCheckTable[i][y] !== 0) {
             if (checkTarget(i, y, currentNode)) break end;
             else break;
           } else
@@ -216,7 +228,7 @@ export class Table {
       }
       for (let i = y + 1; i < this.yLength + 2; i++) {
         if (!visited[x][i]) {
-          if (tempCheckTable[x][i] !== 0) {
+          if (pathCheckTable[x][i] !== 0) {
             if (checkTarget(x, i, currentNode)) break end;
             else break;
           } else
@@ -226,7 +238,7 @@ export class Table {
       }
       for (let i = y - 1; i >= 0; i--) {
         if (!visited[x][i]) {
-          if (tempCheckTable[x][i] !== 0) {
+          if (pathCheckTable[x][i] !== 0) {
             if (checkTarget(x, i, currentNode)) break end;
             else break;
           } else
@@ -235,6 +247,6 @@ export class Table {
         }
       }
     }
-    return linkPath;
+    return linkPathInfo;
   }
 }

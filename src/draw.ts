@@ -2,9 +2,9 @@ import { Table, Point } from './link-class'
 import { Session } from 'koishi'
 import {} from "koishi-plugin-canvas";
 
-const pattern = ['','😀','❤','💎','⚡','👻','🐴','🐇']
+const pattern = ['','😀','❤','💎','⚡','👻','🐴','🐇','🐉','🍎']
 
-export async function draw(session: Session, table: Table, ...points: Point[]):Promise<string> {
+export async function draw(session: Session, table: Table, ...linkPath: Point[]):Promise<string> {
   const canvas = await session.app.canvas.createCanvas(
     (table.xLength + 2) * 100,
     (table.yLength + 2) * 100
@@ -26,13 +26,13 @@ export async function draw(session: Session, table: Table, ...points: Point[]):P
     }
   }
   
-  if (points.length) {
+  if (linkPath.length) {
     ctx.strokeStyle = "red";
     ctx.lineWidth = 10;
 
-    ctx.moveTo((points[0].x) * 100 + 50, (points[0].y) * 100 + 50);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo((points[i].x) * 100 + 50, (points[i].y) * 100 + 50);
+    ctx.moveTo((linkPath[0].x) * 100 + 50, (linkPath[0].y) * 100 + 50);
+    for (let i = 1; i < linkPath.length; i++) {
+      ctx.lineTo((linkPath[i].x) * 100 + 50, (linkPath[i].y) * 100 + 50);
       ctx.stroke();
     }
   }
