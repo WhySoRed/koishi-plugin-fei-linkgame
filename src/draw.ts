@@ -111,10 +111,6 @@ export async function draw(
       ctx.lineWidth = 0.1 * blockSize;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.shadowColor = "white";
-      ctx.shadowBlur = 0.02 * blockSize;
-      ctx.shadowOffsetX = 0.02 * blockSize;
-      ctx.shadowOffsetY = 0.02 * blockSize;
 
 
 
@@ -236,7 +232,6 @@ export async function drawWelcome(session: Session, config: Config) {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.shadowColor = 'white';
-  ctx.shadowBlur = 0.05 * blockSize;
   ctx.shadowOffsetX = 0.05 * blockSize;
   ctx.beginPath();
   ctx.moveTo(2.5* blockSize, -0.5* blockSize);
@@ -250,6 +245,25 @@ export async function drawWelcome(session: Session, config: Config) {
   ctx.font = `${1.5 * blockSize}px`;
   ctx.rotate(0.4);
   ctx.fillText("🤔", 2.2 * blockSize, 1.5 * blockSize);
+  ctx.restore();
+
+  return canvas.toDataURL("image/png");
+}
+
+export async function drawOver(session: Session, config: Config) {
+  const blockSize = config.blockSize;
+  const canvas = await session.app.canvas.createCanvas(4 * blockSize, 3 * blockSize);
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3* blockSize);
+  gradient.addColorStop(0, "#002a33");
+  gradient.addColorStop(1, "#002129");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
+
+  ctx.save();
+  ctx.font = `${1.2* blockSize}px`;
+  ctx.rotate(0);
+  ctx.fillText("🥀", 1.2 * blockSize, 2.1 * blockSize);
   ctx.restore();
 
   return canvas.toDataURL("image/png");

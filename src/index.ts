@@ -4,6 +4,7 @@ import {
   draw as linkGameDraw,
   drawWin as winLinkGameDraw,
   drawWelcome as welcomeLinkGameDraw,
+  drawOver as overLinkGameDraw,
 } from "./draw";
 
 export const inject = {
@@ -213,7 +214,10 @@ export function apply(ctx: Context, config: Config) {
     if (!channelGame.isPlaying) return "游戏还没开始呢";
     channelGame.isPlaying = false;
     channelGame.listener && channelGame.listener();
-    return "游戏结束了~";
+
+    session.send("游戏自我了断了...");
+    const imgUrl = await overLinkGameDraw(session, config);
+    session.send(h.img(imgUrl));
   });
   ctx.command("连连看.重排").action(async ({ session }) => {
     const channelGame =
