@@ -1,4 +1,6 @@
-import { is, Random } from "koishi";
+import { Random } from "koishi";
+
+
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -88,10 +90,13 @@ export class Table {
     patternList = patternList.concat(patternList);
 
     const pattern: number[][] = [];
-    for (let x = 0; x < this.xLength; x++) {
+    for (let x = 0; x < this.xLength + 2; x++) {
       pattern[x] = [];
-      for (let y = 0; y < this.yLength; y++) {
-        pattern[x][y] = patternList.pop();
+      for (let y = 0; y < this.yLength + 2; y++) {
+        if( x === 0 || x === this.xLength + 1 || y === 0 || y === this.yLength + 1) 
+          pattern[x][y] = 0;
+        else
+          pattern[x][y] = patternList.pop();
       }
     }
     return pattern;
@@ -101,8 +106,8 @@ export class Table {
   shuffle() {
     const pointList: Point[] = [];
     let patternList: number[] = [];
-    for (let x = 0; x < this.xLength; x++) {
-      for (let y = 0; y < this.yLength; y++) {
+    for (let x = 0; x < this.xLength + 2; x++) {
+      for (let y = 0; y < this.yLength + 2; y++) {
         if (this.pattern[x][y]) {
           pointList.push(new Point(x, y));
           patternList.push(this.pattern[x][y]);
@@ -127,49 +132,28 @@ export class Table {
       return new PathInfo(false, null, "位置重复");
     }
     if (
-      p1.x < 0 ||
+      p1.x < 1 ||
       p1.x > this.xLength ||
-      p2.x < 0 ||
+      p2.x < 1 ||
       p2.x > this.xLength ||
-      p1.y < 0 ||
+      p1.y < 1 ||
       p1.y > this.yLength ||
-      p2.y < 0 ||
+      p2.y < 1 ||
       p2.y > this.yLength
     ) {
       return new PathInfo(false, null, "位置超出范围");
     }
 
-    const pathCheckTable: number[][] = [];
-    const startX: number = p1.x + 1;
-    const startY: number = p1.y + 1;
-    const endX: number = p2.x + 1;
-    const endY: number = p2.y + 1;
-
-    // 建立一个扩大一圈的检查路径的表格
-    for (let x = 0; x < this.xLength + 2; x++) {
-      pathCheckTable[x] = [];
-      for (let y = 0; y < this.yLength + 2; y++) {
-        if (
-          x === 0 ||
-          x === this.xLength + 1 ||
-          y === 0 ||
-          y === this.yLength + 1
-        ) {
-          pathCheckTable[x][y] = 0;
-        } else pathCheckTable[x][y] = this.pattern[x - 1][y - 1];
-      }
-    }
-
     // 最大折线数
     const maxLevel =
-      (p1.x === 0 && p2.y === 0) ||
-      (p1.x === 0 && p2.y === this.yLength - 1) ||
-      (p1.x === this.xLength - 1 && p2.y === 0) ||
-      (p1.x === this.xLength - 1 && p2.y === this.yLength - 1) ||
-      (p2.x === 0 && p1.y === 0) ||
-      (p2.x === 0 && p1.y === this.yLength - 1) ||
-      (p2.x === this.xLength - 1 && p1.y === 0) ||
-      (p2.x === this.xLength - 1 && p1.y === this.yLength - 1)
+      (p1.x === 1 && p2.y === 1) ||
+      (p1.x === 1 && p2.y === this.yLength) ||
+      (p1.x === this.xLength && p2.y === 1) ||
+      (p1.x === this.xLength && p2.y === this.yLength) ||
+      (p2.x === 1 && p1.y === 1) ||
+      (p2.x === 1 && p1.y === this.yLength) ||
+      (p2.x === this.xLength && p1.y === 1) ||
+      (p2.x === this.xLength && p1.y === this.yLength)
         ? 3 //如果有一点在边缘则允许更大范围的搜索
         : 2; //否则超过三次折线则停止
 
@@ -182,9 +166,9 @@ export class Table {
     }
     const nodeQueue: Node[] = []; // 建立一个队列
 
-    nodeQueue.push(new Node(startX, startY)); // 将起点加入队列
+    nodeQueue.push(new Node(p1.x, p1.y)); // 将起点加入队列
 
-    let linkPathInfo = new PathInfo(false, null, "没有通路");
+    let linkPathInfo = new PathInfo(false, null, "这两个位置无法连接...");
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
     const checkTarget = (
@@ -192,14 +176,14 @@ export class Table {
       y: number,
       currentNode: Node
     ): PointJudgement => {
-      if (pathCheckTable[x][y] === 0) {
+      if (this.pattern[x][y] === 0) {
         if (visited[x][y]) return IS_VISITED;
         visited[x][y] = true;
         nodeQueue.push(new Node(x, y, currentNode.level + 1, currentNode));
         return IS_EMPTY;
       }
 
-      if (x !== endX || y !== endY) return IS_OTHER_PATTERN;
+      if (x !== p2.x || y !== p2.y) return IS_OTHER_PATTERN;
 
       const linkPath: Point[] = [];
       let node: Node = currentNode;
@@ -208,7 +192,7 @@ export class Table {
         node = node.parent;
       }
       linkPath.push(new Point(node.x, node.y));
-      linkPath.reverse().push(new Point(endX, endY));
+      linkPath.reverse().push(new Point(p2.x, p2.y));
       linkPathInfo = new PathInfo(true, linkPath, "找到通路");
       return IS_TARGET;
     };
