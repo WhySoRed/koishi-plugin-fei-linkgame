@@ -1,6 +1,6 @@
 import { Random } from "koishi";
 
-
+const defaultMaxPatternTypes = 9;
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -43,7 +43,7 @@ class Node extends Point {
 export class Table {
   xLength: number;
   yLength: number;
-  patternRange: number = 9;
+  maxPatternTypes: number = defaultMaxPatternTypes;
   pattern: number[][];
   get isClear(): boolean {
     for (let x = 0; x < this.xLength + 1; x++) {
@@ -54,12 +54,12 @@ export class Table {
     return true;
   }
 
-  constructor(xLength: number, yLength: number, patternRange?: number) {
+  constructor(xLength: number, yLength: number, maxPatternTypes?: number) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
-    if (patternRange) {
-      this.patternRange = patternRange;
+    if (maxPatternTypes) {
+      this.maxPatternTypes = maxPatternTypes;
     }
     this.pattern = this.init();
     this.shuffle();
@@ -78,11 +78,11 @@ export class Table {
     }
 
     let patternList: number[] = [];
-    let patternCreateArr = randomArr(this.patternRange);
+    let patternCreateArr = randomArr(this.maxPatternTypes);
 
     for (let i = 0; i < (this.xLength * this.yLength) / 2; i++) {
       if (patternCreateArr.length === 0) {
-        patternCreateArr = randomArr(this.patternRange);
+        patternCreateArr = randomArr(this.maxPatternTypes);
       }
       const pattern = patternCreateArr.pop();
       patternList.push(pattern);

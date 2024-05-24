@@ -1,4 +1,4 @@
-import { Table, Point } from "./link-class";
+import { Table, Point } from "./linkGame";
 import { Session } from "koishi";
 import {} from "koishi-plugin-canvas";
 
