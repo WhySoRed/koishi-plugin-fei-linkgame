@@ -1,17 +1,18 @@
+import exp from "constants";
 import { Table, Point } from "./linkGame";
 import { Session } from "koishi";
 import {} from "koishi-plugin-canvas";
 
 const blockSize = 100; // 每个格子的大小
-const pattern = ["", "😀", "❤", "💎", "⚡", "👻", "🐴", "🐇", "🐉", "🍎"];
+const pattern = ["", "😀", "❤", "💎", "⚡", "👻", "🌸", "🐇", "🐉", "🍎"];
 
 export async function draw(
   session: Session,
   table: Table,
   ...linkPath: Point[]
 ): Promise<string> {
-  const width = (table.yLength + 2 - .8) * blockSize;
-  const height = (table.xLength + 2 - .8) * blockSize;
+  const width = (table.yLength + 2 - 0.8) * blockSize;
+  const height = (table.xLength + 2 - 0.8) * blockSize;
 
   const patternBlockCanvas = await session.app.canvas.createCanvas(
     blockSize,
@@ -77,7 +78,11 @@ export async function draw(
     for (let j = 0; j < table.xLength + 2; j++) {
       if (table.pattern[j][i]) {
         ctx.save();
-        ctx.drawImage(patternBlockShadow, (i+.05) * blockSize, (j+.05) * blockSize);
+        ctx.drawImage(
+          patternBlockShadow,
+          (i + 0.05) * blockSize,
+          (j + 0.05) * blockSize
+        );
         ctx.drawImage(patternBlock, i * blockSize, j * blockSize);
         ctx.restore();
         ctx.fillText(
@@ -129,6 +134,46 @@ export async function draw(
   }
 
   ctx.translate(0.4 * blockSize, 0.4 * blockSize);
+
+  return canvas.toDataURL("image/png");
+}
+
+export async function drawWin(session: Session) {
+  const canvas = await session.app.canvas.createCanvas(
+    4 * blockSize,
+    3 * blockSize
+  );
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 8 * blockSize, 6 * blockSize);
+  gradient.addColorStop(0, "#002a33");
+  gradient.addColorStop(1, "#002129");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 8 * blockSize, 6 * blockSize);
+
+  
+  ctx.save();
+  ctx.font = `${1.5 * blockSize}px`;
+  ctx.rotate(0);
+  ctx.fillText("🎇", 2.5 * blockSize, 1 * blockSize);
+  ctx.restore();
+  
+  ctx.save();
+  ctx.font = `${2 * blockSize}px`;
+  ctx.rotate(-0.1);
+  ctx.fillText("🏆", 0 * blockSize, 2 * blockSize);
+  ctx.restore();
+  
+  ctx.save();
+  ctx.font = `${1.5 * blockSize}px`;
+  ctx.rotate(0.4);
+  ctx.fillText("🥳", 2.2 * blockSize, 1.5 * blockSize);
+  ctx.restore();
+  
+  ctx.save();
+  ctx.font = `${1.5 * blockSize}px`;
+  ctx.rotate(0);
+  ctx.fillText("🎆", -0.5 * blockSize, 2.8 * blockSize);
+  ctx.restore();
 
   return canvas.toDataURL("image/png");
 }
