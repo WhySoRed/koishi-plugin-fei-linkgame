@@ -1,9 +1,10 @@
-import { Random } from "koishi";
+import { is, Random } from "koishi";
 
 const IS_EMPTY = 0;
-const IS_TARGET = 1;
+const IS_VISITED = 1;
 const IS_OTHER_PATTERN = 2;
-type Square = 0 | 1 | 2;
+const IS_TARGET = 3;
+type PointJudgement = 0 | 1 | 2 | 3;
 
 export class Point {
   x: number;
@@ -40,17 +41,26 @@ class Node extends Point {
 export class Table {
   xLength: number;
   yLength: number;
-  patternRangeLength: number = 7;
-  squares: number[][];
+  patternRange: number = 9;
+  pattern: number[][];
+  get isClear(): boolean {
+    for (let x = 0; x < this.xLength + 1; x++) {
+      for (let y = 0; y < this.yLength + 1; y++) {
+        if (this.pattern[x][y] !== 0) return false;
+      }
+    }
+    return true;
+  }
 
-  constructor(xLength: number, yLength: number, patternRangeLength?: number) {
+  constructor(xLength: number, yLength: number, patternRange?: number) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
-    if (patternRangeLength) {
-      this.patternRangeLength = patternRangeLength;
+    if (patternRange) {
+      this.patternRange = patternRange;
     }
-    this.squares = this.init();
+    this.pattern = this.init();
+    this.shuffle();
   }
 
   // 初始化
@@ -58,34 +68,33 @@ export class Table {
     const random = new Random();
 
     function randomArr(length: number) {
+      const patternCreateArr: number[] = [];
       for (let i = 0; i < length; i++) {
-        patternList.push(i + 1);
+        patternCreateArr.push(i + 1);
       }
-      return random.shuffle(patternList);
+      return random.shuffle(patternCreateArr);
     }
 
     let patternList: number[] = [];
-    let patternCreateArr = randomArr(this.patternRangeLength);
+    let patternCreateArr = randomArr(this.patternRange);
 
     for (let i = 0; i < (this.xLength * this.yLength) / 2; i++) {
       if (patternCreateArr.length === 0) {
-        patternCreateArr = randomArr(this.patternRangeLength);
+        patternCreateArr = randomArr(this.patternRange);
       }
-      const pattern = randomArr(this.patternRangeLength).pop();
+      const pattern = patternCreateArr.pop();
       patternList.push(pattern);
     }
-
     patternList = patternList.concat(patternList);
-    patternList = random.shuffle(patternList);
 
-    const squares: number[][] = [];
+    const pattern: number[][] = [];
     for (let x = 0; x < this.xLength; x++) {
-      squares[x] = [];
+      pattern[x] = [];
       for (let y = 0; y < this.yLength; y++) {
-        squares[x][y] = patternList.pop();
+        pattern[x][y] = patternList.pop();
       }
     }
-    return squares;
+    return pattern;
   }
 
   // 打乱
@@ -94,31 +103,26 @@ export class Table {
     let patternList: number[] = [];
     for (let x = 0; x < this.xLength; x++) {
       for (let y = 0; y < this.yLength; y++) {
-        if (this.squares[x][y]) {
+        if (this.pattern[x][y]) {
           pointList.push(new Point(x, y));
-          patternList.push(this.squares[x][y]);
+          patternList.push(this.pattern[x][y]);
         }
       }
     }
     const random = new Random();
     patternList = random.shuffle(patternList);
     for (let i = 0; i < pointList.length; i++) {
-      this.squares[pointList[i].x][pointList[i].y] = patternList[i];
+      this.pattern[pointList[i].x][pointList[i].y] = patternList[i];
     }
   }
 
-  remove(p1: Point, p2: Point) {
-    if (this.squares[p1.x][p1.y] === this.squares[p2.x][p2.y]) {
-      this.squares[p1.x][p1.y] = IS_EMPTY;
-      this.squares[p2.x][p2.y] = IS_EMPTY;
-    }
-
+  remove(p1: Point, p2: Point): void {
+    this.pattern[p1.x][p1.y] = 0;
+    this.pattern[p2.x][p2.y] = 0;
   }
-
 
   // 检查是否存在三条直线可以连接的通路
   checkPath(p1: Point, p2: Point): PathInfo {
-
     if (p1.x === p2.x && p1.y === p2.y) {
       return new PathInfo(false, null, "位置重复");
     }
@@ -152,7 +156,7 @@ export class Table {
           y === this.yLength + 1
         ) {
           pathCheckTable[x][y] = 0;
-        } else pathCheckTable[x][y] = this.squares[x - 1][y - 1];
+        } else pathCheckTable[x][y] = this.pattern[x - 1][y - 1];
       }
     }
 
@@ -183,23 +187,33 @@ export class Table {
     let linkPathInfo = new PathInfo(false, null, "没有通路");
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
-    const checkTarget = (x: number, y: number, currentNode: Node): boolean => {
-      if (x === endX && y === endY) {
-        const linkPath: Point[] = [];
-        let node: Node = currentNode;
-        while (node.parent) {
-          linkPath.push(new Point(node.x, node.y));
-          node = node.parent;
-        }
-        linkPath.push(new Point(node.x, node.y));
-        linkPath.reverse().push(new Point(endX,endY))
-        linkPathInfo = new PathInfo(true, linkPath, "找到通路");
-        return true;
+    const checkTarget = (
+      x: number,
+      y: number,
+      currentNode: Node
+    ): PointJudgement => {
+      if (pathCheckTable[x][y] === 0) {
+        if (visited[x][y]) return IS_VISITED;
+        visited[x][y] = true;
+        nodeQueue.push(new Node(x, y, currentNode.level + 1, currentNode));
+        return IS_EMPTY;
       }
-      return false;
+
+      if (x !== endX || y !== endY) return IS_OTHER_PATTERN;
+
+      const linkPath: Point[] = [];
+      let node: Node = currentNode;
+      while (node.parent) {
+        linkPath.push(new Point(node.x, node.y));
+        node = node.parent;
+      }
+      linkPath.push(new Point(node.x, node.y));
+      linkPath.reverse().push(new Point(endX, endY));
+      linkPathInfo = new PathInfo(true, linkPath, "找到通路");
+      return IS_TARGET;
     };
 
-    // 以队列循环搜索
+    // 广度优先搜索
     end: while (nodeQueue.length) {
       const currentNode = nodeQueue.shift();
       if (currentNode.level > maxLevel) break;
@@ -207,44 +221,28 @@ export class Table {
       const x = currentNode.x;
       const y = currentNode.y;
       for (let i = x + 1; i < this.xLength + 2; i++) {
-        if (!visited[i][y]) {
-          if (pathCheckTable[i][y] !== 0) {
-            if (checkTarget(i, y, currentNode)) break end;
-            else break;
-          } else
-            nodeQueue.push(new Node(i, y, currentNode.level + 1, currentNode));
-          visited[i][y] = true;
-        }
+        const judgement = checkTarget(i, y, currentNode);
+        if (judgement === IS_TARGET) break end;
+        else if (judgement === IS_OTHER_PATTERN) break;
+        else continue;
       }
       for (let i = x - 1; i >= 0; i--) {
-        if (!visited[i][y]) {
-          if (pathCheckTable[i][y] !== 0) {
-            if (checkTarget(i, y, currentNode)) break end;
-            else break;
-          } else
-            nodeQueue.push(new Node(i, y, currentNode.level + 1, currentNode));
-          visited[i][y] = true;
-        }
+        const judgement = checkTarget(i, y, currentNode);
+        if (judgement === IS_TARGET) break end;
+        else if (judgement === IS_OTHER_PATTERN) break;
+        else continue;
       }
       for (let i = y + 1; i < this.yLength + 2; i++) {
-        if (!visited[x][i]) {
-          if (pathCheckTable[x][i] !== 0) {
-            if (checkTarget(x, i, currentNode)) break end;
-            else break;
-          } else
-            nodeQueue.push(new Node(x, i, currentNode.level + 1, currentNode));
-          visited[x][i] = true;
-        }
+        const judgement = checkTarget(x, i, currentNode);
+        if (judgement === IS_TARGET) break end;
+        else if (judgement === IS_OTHER_PATTERN) break;
+        else continue;
       }
       for (let i = y - 1; i >= 0; i--) {
-        if (!visited[x][i]) {
-          if (pathCheckTable[x][i] !== 0) {
-            if (checkTarget(x, i, currentNode)) break end;
-            else break;
-          } else
-            nodeQueue.push(new Node(x, i, currentNode.level + 1, currentNode));
-          visited[x][i] = true;
-        }
+        const judgement = checkTarget(x, i, currentNode);
+        if (judgement === IS_TARGET) break end;
+        else if (judgement === IS_OTHER_PATTERN) break;
+        else continue;
       }
     }
     return linkPathInfo;

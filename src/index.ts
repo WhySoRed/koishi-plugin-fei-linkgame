@@ -1,4 +1,4 @@
-import { Context, Schema, h } from "koishi";
+import { Context, Schema, Session, h } from "koishi";
 import { Table as LinkTable, Point as LinkPoint } from "./link-class";
 import { draw as linkGameDraw } from "./draw";
 
@@ -9,12 +9,12 @@ export interface Config {}
 export const Config: Schema<Config> = Schema.object({});
 
 export function apply(ctx: Context) {
-  // write your plugin here
-  const table = new LinkTable(8, 6);
+  const table = new LinkTable(3, 4);
+
   ctx.command("link测试").action(async ({ session }) => {
     const imgUrl = await linkGameDraw(session, table);
     session.send(h.img(imgUrl));
-  });
+  })
 
   ctx.command("link测试2").action(async ({ session, args }) => {
     const p1 = new LinkPoint(
@@ -25,13 +25,28 @@ export function apply(ctx: Context) {
       Math.floor(+args[2] - 1),
       Math.floor(+args[3] - 1)
     );
+    return await checkLickGame(session,p1,p2);
+  })
+
+  async function checkLickGame(session:Session, p1:LinkPoint, p2:LinkPoint) {
+    if(!table.pattern[p1.x][p1.y] || !table.pattern[p2.x][p2.y]){
+      return("连的位置上没有图案呀");
+    }
+    if(table.pattern[p1.x][p1.y] !== table.pattern[p2.x][p2.y]){
+      return ("这两个位置的图案不相同");
+    }
     const pathInfo = table.checkPath(p1, p2);
     console.log("lp:" + JSON.stringify(pathInfo));
-    if (!pathInfo) {
-      session.send("无法连接");
+    if (!pathInfo.enableLink) {
+      session.send("这两个位置无法连接");
     } else {
-      const imgUrl = await linkGameDraw(session, table, ...pathInfo.linkPath);
-      session.send(h.img(imgUrl));
+      let imgUrl = await linkGameDraw(session, table, ...pathInfo.linkPath);
+      await session.send(h.img(imgUrl));
+      table.remove(p1,p2);
+      imgUrl = await linkGameDraw(session, table);
+      await session.send(h.img(imgUrl));
     }
-  });
+    if(table.isClear) return ("游戏胜利~");
+  }
+
 }
