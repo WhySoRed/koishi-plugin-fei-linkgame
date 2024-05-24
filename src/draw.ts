@@ -1,16 +1,18 @@
-import exp from "constants";
 import { Table, Point } from "./linkGame";
-import { Session } from "koishi";
+import { Session, Random } from "koishi";
 import {} from "koishi-plugin-canvas";
-
-const blockSize = 100; // 每个格子的大小
-const pattern = ["", "😀", "❤", "💎", "⚡", "👻", "🌸", "🐇", "🐉", "🍎"];
+import { Config } from ".";
 
 export async function draw(
   session: Session,
+  config: Config,
+  patterns: string[],
   table: Table,
-  ...linkPath: Point[]
+  linkPathArr?: Point[][]
 ): Promise<string> {
+  const blockSize = config.blockSize;
+  const pattern = [""].concat(patterns);
+
   const width = (table.yLength + 2 - 0.8) * blockSize;
   const height = (table.xLength + 2 - 0.8) * blockSize;
 
@@ -102,34 +104,42 @@ export async function draw(
       }
     }
   }
+  for (const i in linkPathArr) {
+    const linkPath = linkPathArr[i];
+    if (linkPath.length) {
+      ctx.strokeStyle = "#de3163";
+      ctx.lineWidth = 0.1 * blockSize;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.shadowColor = "white";
+      ctx.shadowBlur = 0.02 * blockSize;
+      ctx.shadowOffsetX = 0.02 * blockSize;
+      ctx.shadowOffsetY = 0.02 * blockSize;
 
-  if (linkPath.length) {
-    ctx.strokeStyle = "#de3163";
-    ctx.lineWidth = 0.1 * blockSize;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
 
-    ctx.moveTo(
-      linkPath[0].y * blockSize + 0.5 * blockSize,
-      linkPath[0].x * blockSize + 0.5 * blockSize
-    );
-    for (let i = 1; i < linkPath.length; i++) {
-      let drawpointX: number;
-      let drawpointY: number;
-      if (linkPath[i].y === 0)
-        drawpointX = linkPath[i].y * blockSize + 0.8 * blockSize;
-      else if (linkPath[i].y === table.yLength + 1)
-        drawpointX = linkPath[i].y * blockSize + 0.2 * blockSize;
-      else drawpointX = linkPath[i].y * blockSize + 0.5 * blockSize;
 
-      if (linkPath[i].x === 0)
-        drawpointY = linkPath[i].x * blockSize + 0.8 * blockSize;
-      else if (linkPath[i].x === table.xLength + 1)
-        drawpointY = linkPath[i].x * blockSize + 0.2 * blockSize;
-      else drawpointY = linkPath[i].x * blockSize + 0.5 * blockSize;
+      ctx.moveTo(
+        linkPath[0].y * blockSize + 0.5 * blockSize,
+        linkPath[0].x * blockSize + 0.5 * blockSize
+      );
+      for (let i = 1; i < linkPath.length; i++) {
+        let drawpointX: number;
+        let drawpointY: number;
+        if (linkPath[i].y === 0)
+          drawpointX = linkPath[i].y * blockSize + 0.8 * blockSize;
+        else if (linkPath[i].y === table.yLength + 1)
+          drawpointX = linkPath[i].y * blockSize + 0.2 * blockSize;
+        else drawpointX = linkPath[i].y * blockSize + 0.5 * blockSize;
 
-      ctx.lineTo(drawpointX, drawpointY);
-      ctx.stroke();
+        if (linkPath[i].x === 0)
+          drawpointY = linkPath[i].x * blockSize + 0.8 * blockSize;
+        else if (linkPath[i].x === table.xLength + 1)
+          drawpointY = linkPath[i].x * blockSize + 0.2 * blockSize;
+        else drawpointY = linkPath[i].x * blockSize + 0.5 * blockSize;
+
+        ctx.lineTo(drawpointX, drawpointY);
+        ctx.stroke();
+      }
     }
   }
 
@@ -138,41 +148,108 @@ export async function draw(
   return canvas.toDataURL("image/png");
 }
 
-export async function drawWin(session: Session) {
+export async function drawWin(session: Session, config: Config) {
+  const blockSize = config.blockSize;
   const canvas = await session.app.canvas.createCanvas(
     4 * blockSize,
     3 * blockSize
   );
   const ctx = canvas.getContext("2d");
-  const gradient = ctx.createLinearGradient(0, 0, 8 * blockSize, 6 * blockSize);
+  const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3* blockSize);
   gradient.addColorStop(0, "#002a33");
   gradient.addColorStop(1, "#002129");
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 8 * blockSize, 6 * blockSize);
+  ctx.fillRect(0, 0, 4 * blockSize, 3* blockSize);
 
-  
   ctx.save();
   ctx.font = `${1.5 * blockSize}px`;
   ctx.rotate(0);
   ctx.fillText("🎇", 2.5 * blockSize, 1 * blockSize);
   ctx.restore();
-  
+
   ctx.save();
   ctx.font = `${2 * blockSize}px`;
   ctx.rotate(-0.1);
   ctx.fillText("🏆", 0 * blockSize, 2 * blockSize);
   ctx.restore();
-  
+
   ctx.save();
   ctx.font = `${1.5 * blockSize}px`;
   ctx.rotate(0.4);
   ctx.fillText("🥳", 2.2 * blockSize, 1.5 * blockSize);
   ctx.restore();
-  
+
   ctx.save();
   ctx.font = `${1.5 * blockSize}px`;
   ctx.rotate(0);
   ctx.fillText("🎆", -0.5 * blockSize, 2.8 * blockSize);
+  ctx.restore();
+
+  return canvas.toDataURL("image/png");
+}
+
+export async function drawWelcome(session: Session, config: Config) {
+  const blockSize = config.blockSize;
+  const canvas = await session.app.canvas.createCanvas(4 * blockSize, 3 * blockSize);
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3* blockSize);
+  gradient.addColorStop(0, "#002a33");
+  gradient.addColorStop(1, "#002129");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
+
+  const randomPatternArr = (new Random()).shuffle(config.pattermType).slice(0, 4)
+
+  ctx.save();
+  ctx.font = `${1.7 * blockSize}px`;
+  ctx.rotate(-.4);
+  ctx.fillText(randomPatternArr[0], -.5 * blockSize, 2.2* blockSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `${1.3 * blockSize}px`;
+  ctx.rotate(.4);
+  ctx.fillText(randomPatternArr[1], 2 * blockSize, 0 * blockSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `${1.5 * blockSize}px`;
+  ctx.rotate(-0.1);
+  ctx.fillText(randomPatternArr[2], -0.2 * blockSize, 2.7 * blockSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `${1.2 * blockSize}px`;
+  ctx.rotate(.3);
+  ctx.fillText(randomPatternArr[3], 3 * blockSize, 1 * blockSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = "#de3163";
+  ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = "#de3163";
+  ctx.lineWidth = 0.1 * blockSize;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.shadowColor = 'white';
+  ctx.shadowBlur = 0.05 * blockSize;
+  ctx.shadowOffsetX = 0.05 * blockSize;
+  ctx.beginPath();
+  ctx.moveTo(2.5* blockSize, -0.5* blockSize);
+  ctx.lineTo( blockSize, blockSize);
+  ctx.lineTo(2* blockSize, 2* blockSize);
+  ctx.lineTo(blockSize, 3*blockSize);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = `${1.5 * blockSize}px`;
+  ctx.rotate(0.4);
+  ctx.fillText("🤔", 2.2 * blockSize, 1.5 * blockSize);
   ctx.restore();
 
   return canvas.toDataURL("image/png");

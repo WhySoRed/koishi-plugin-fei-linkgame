@@ -1,6 +1,5 @@
 import { Random } from "koishi";
-
-const defaultMaxPatternTypes = 9;
+import { Config } from ".";
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -43,7 +42,7 @@ class Node extends Point {
 export class Table {
   xLength: number;
   yLength: number;
-  maxPatternTypes: number = defaultMaxPatternTypes;
+  maxPatternTypes: number;
   pattern: number[][];
   get isClear(): boolean {
     for (let x = 0; x < this.xLength + 1; x++) {
@@ -54,13 +53,11 @@ export class Table {
     return true;
   }
 
-  constructor(xLength: number, yLength: number, maxPatternTypes?: number) {
+  constructor(xLength: number, yLength: number, maxPatternTypes: number) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
-    if (maxPatternTypes) {
-      this.maxPatternTypes = maxPatternTypes;
-    }
+    this.maxPatternTypes = maxPatternTypes;
     this.pattern = this.init();
     this.shuffle();
   }
@@ -93,10 +90,14 @@ export class Table {
     for (let x = 0; x < this.xLength + 2; x++) {
       pattern[x] = [];
       for (let y = 0; y < this.yLength + 2; y++) {
-        if( x === 0 || x === this.xLength + 1 || y === 0 || y === this.yLength + 1) 
+        if (
+          x === 0 ||
+          x === this.xLength + 1 ||
+          y === 0 ||
+          y === this.yLength + 1
+        )
           pattern[x][y] = 0;
-        else
-          pattern[x][y] = patternList.pop();
+        else pattern[x][y] = patternList.pop();
       }
     }
     return pattern;
@@ -127,7 +128,7 @@ export class Table {
   }
 
   // 检查是否存在三条直线可以连接的通路
-  checkPath(p1: Point, p2: Point): PathInfo {
+  checkPath(config: Config, p1: Point, p2: Point): PathInfo {
     if (p1.x === p2.x && p1.y === p2.y) {
       return new PathInfo(false, null, "位置重复");
     }
@@ -145,17 +146,27 @@ export class Table {
     }
 
     // 最大折线数
-    const maxLevel =
-      (p1.x === 1 && p2.y === 1) ||
-      (p1.x === 1 && p2.y === this.yLength) ||
-      (p1.x === this.xLength && p2.y === 1) ||
-      (p1.x === this.xLength && p2.y === this.yLength) ||
-      (p2.x === 1 && p1.y === 1) ||
-      (p2.x === 1 && p1.y === this.yLength) ||
-      (p2.x === this.xLength && p1.y === 1) ||
-      (p2.x === this.xLength && p1.y === this.yLength)
-        ? 3 //如果有一点在边缘则允许更大范围的搜索
-        : 2; //否则超过三次折线则停止
+    let maxLevel = config.maxLink;
+    if (
+      config.moreSideFree &&
+      ((p1.x === 1 && p2.x === this.xLength) ||
+        (p1.x === this.xLength && p2.x === 1) ||
+        (p1.y === 1 && p2.y === this.yLength) ||
+        (p1.y === this.yLength && p2.y === 1))
+    )
+      maxLevel = 4;
+    if (
+      (config.sideFree || config.moreSideFree) &&
+      ((p1.x === 1 && p2.y === 1) ||
+        (p1.x === 1 && p2.y === this.yLength) ||
+        (p1.x === this.xLength && p2.y === 1) ||
+        (p1.x === this.xLength && p2.y === this.yLength) ||
+        (p2.x === 1 && p1.y === 1) ||
+        (p2.x === 1 && p1.y === this.yLength) ||
+        (p2.x === this.xLength && p1.y === 1) ||
+        (p2.x === this.xLength && p1.y === this.yLength))
+    )
+      maxLevel = 3;
 
     const visited: boolean[][] = []; // 记录是否访问过
     for (let x = 0; x < this.xLength + 2; x++) {
