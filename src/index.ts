@@ -11,7 +11,12 @@ export const inject = {
   required: ["database", "canvas"],
 };
 
-export const name = "link-game-demo";
+export const name = "fei-linkgame";
+
+export const usage = `
+可以在koishi上玩连连看~
+小心不要沉迷...
+`;
 
 export interface Config {
   sideFree: boolean;
@@ -90,7 +95,6 @@ export function apply(ctx: Context, config: Config) {
         `欢迎来玩...\n` +
         `KOISHI连连看~\n` +
         `指令一览：\n\n` +
-
         `连连看.开始\n` +
         `连连看.结束\n` +
         `连连看.重排\n` +
@@ -150,13 +154,7 @@ export function apply(ctx: Context, config: Config) {
   ctx.command("连连看.开始").action(async ({ session }) => {
     const channelGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (channelGame.isPlaying)
-      return (
-        `游戏已经开始了\n` +
-        `请使用 连连看.连 来连接图案\n` +
-        `需要重排请使用\n` +
-        `连连看.重排\n`
-      );
+    if (channelGame.isPlaying) return `游戏已经开始了`;
 
     let linkGameData = (
       await ctx.database.get("linkGameData", { cid: session.cid })
@@ -204,7 +202,14 @@ export function apply(ctx: Context, config: Config) {
       channelGame.patterns,
       channelGame.table
     );
-    session.send("游戏开始咯~");
+    session.send(
+      `游戏开始咯~\n` +
+        `大小${channelGame.table.xLength}x${channelGame.table.yLength} 图案数${channelGame.patterns.length}\n` +
+        `连接图案请使用\n` +
+        `"连连看.连"\n` +
+        `需要重排请使用\n` +
+        `"连连看.重排"\n`
+    );
     session.send(h.img(imgUrl));
   });
 
