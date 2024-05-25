@@ -3,6 +3,7 @@ import {
   Table as LinkTable,
   Point as LinkPoint,
   PathInfo as LinkPathInfo,
+  Table,
 } from "./linkGame";
 import {
   draw as linkGameDraw,
@@ -10,6 +11,7 @@ import {
   drawWelcome as welcomeLinkGameDraw,
   drawOver as overLinkGameDraw,
 } from "./draw";
+import { table } from "console";
 
 export const inject = {
   required: ["database", "canvas"],
@@ -120,9 +122,9 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx.command("连连看.设置").action(async ({ session, args }) => {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (channelGame.isPlaying) return "游戏中不可以更改设置哦";
+    if (linkGame.isPlaying) return "游戏中不可以更改设置哦";
 
     let linkGameData = (
       await ctx.database.get("linkGameData", { cid: session.cid })
@@ -169,9 +171,9 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx.command("连连看.开始").action(async ({ session }) => {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (channelGame.isPlaying) return `游戏已经开始了`;
+    if (linkGame.isPlaying) return `游戏已经开始了`;
 
     let linkGameData = (
       await ctx.database.get("linkGameData", { cid: session.cid })
@@ -189,9 +191,9 @@ export function apply(ctx: Context, config: Config) {
     if (maxPatternTypes > config.pattermType.length)
       return "现在图案种类比库存多...请更改设置";
 
-    channelGame.isPlaying = true;
+    linkGame.isPlaying = true;
     //游戏过程中的快捷指令
-    channelGame.listener = ctx
+    linkGame.listener = ctx
       .channel(session.channelId)
       .on("message", async (session) => {
         if (
@@ -208,12 +210,12 @@ export function apply(ctx: Context, config: Config) {
             if (args[0] !== "连") break;
             args.shift();
             const p1 = new LinkPoint(
-              Math.floor(+args[0] / channelGame.table.yLength) + 1,
-              (Math.floor(+args[0]) % channelGame.table.yLength) + 1
+              Math.floor(+args[0] / linkGame.table.yLength) + 1,
+              (Math.floor(+args[0]) % linkGame.table.yLength) + 1
             );
             const p2 = new LinkPoint(
-              Math.floor(+args[1] / channelGame.table.yLength) + 1,
-              (Math.floor(+args[1]) % channelGame.table.yLength) + 1
+              Math.floor(+args[1] / linkGame.table.yLength) + 1,
+              (Math.floor(+args[1]) % linkGame.table.yLength) + 1
             );
             args.shift();
             args.shift();
@@ -227,7 +229,7 @@ export function apply(ctx: Context, config: Config) {
               )
             )
               continue;
-            const pathInfo = channelGame.table.checkPath(config, p1, p2);
+            const pathInfo = linkGame.table.checkPath(config, p1, p2);
             if (pathInfo.enableLink) {
               pathInfoArr.push(pathInfo);
               removeArr.push([p1, p2]);
@@ -236,17 +238,17 @@ export function apply(ctx: Context, config: Config) {
           const imgUrl1 = await linkGameDraw(
             session,
             config,
-            channelGame.patterns,
-            channelGame.table,
+            linkGame.patterns,
+            linkGame.table,
             pathInfoArr.map((v) => v.linkPath)
           );
           await session.send(h.img(imgUrl1));
           for (const [p1, p2] of removeArr) {
-            channelGame.table.remove(p1, p2);
+            linkGame.table.remove(p1, p2);
           }
-          if (channelGame.table.isClear) {
-            channelGame.isPlaying = false;
-            channelGame.listener && channelGame.listener();
+          if (linkGame.table.isClear) {
+            linkGame.isPlaying = false;
+            linkGame.listener && linkGame.listener();
             const imgUrl = await winLinkGameDraw(session, config);
             session.send(h.img(imgUrl));
             session.send("所有的图案都被消除啦~");
@@ -254,27 +256,27 @@ export function apply(ctx: Context, config: Config) {
             const imgUrl2 = await linkGameDraw(
               session,
               config,
-              channelGame.patterns,
-              channelGame.table
+              linkGame.patterns,
+              linkGame.table
             );
             await session.send(h.img(imgUrl2));
           }
         }
       });
     const random = new Random();
-    channelGame.patterns = random
+    linkGame.patterns = random
       .shuffle(config.pattermType)
       .slice(0, maxPatternTypes);
-    channelGame.table = new LinkTable(xLength, yLength, maxPatternTypes);
+    linkGame.table = new LinkTable(xLength, yLength, maxPatternTypes);
     const imgUrl = await linkGameDraw(
       session,
       config,
-      channelGame.patterns,
-      channelGame.table
+      linkGame.patterns,
+      linkGame.table
     );
     session.send(
       `游戏开始咯~\n` +
-        `大小${channelGame.table.xLength}x${channelGame.table.yLength} 图案数${channelGame.patterns.length}\n` +
+        `大小${linkGame.table.xLength}x${linkGame.table.yLength} 图案数${linkGame.patterns.length}\n` +
         `连接图案请使用\n` +
         `"连连看.连"\n` +
         `需要重排请使用\n` +
@@ -284,111 +286,63 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx.command("连连看.结束").action(async ({ session }) => {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (!channelGame.isPlaying) return "游戏还没开始呢";
-    channelGame.isPlaying = false;
-    channelGame.listener && channelGame.listener();
+    if (!linkGame.isPlaying) return "游戏还没开始呢";
+    linkGame.isPlaying = false;
+    linkGame.listener && linkGame.listener();
 
     session.send("游戏自我了断了...");
     const imgUrl = await overLinkGameDraw(session, config);
     session.send(h.img(imgUrl));
   });
   ctx.command("连连看.重排").action(async ({ session }) => {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (!channelGame.isPlaying) return "游戏还没开始呢";
-    channelGame.table.shuffle();
+    if (!linkGame.isPlaying) return "游戏还没开始呢";
+    linkGame.table.shuffle();
     const imgUrl = await linkGameDraw(
       session,
       config,
-      channelGame.patterns,
-      channelGame.table
+      linkGame.patterns,
+      linkGame.table
     );
     session.send(h.img(imgUrl));
     return "已经重新打乱顺序了~";
   });
 
   ctx.command("连连看.连").action(async ({ session, args }) => {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (!channelGame.isPlaying) return "游戏还没开始呢";
-    let p1x: number, p1y: number, p2x: number, p2y: number;
-    if (args.length === 4) {
-      p1x = Math.floor(+args[0]);
-      p1y = Math.floor(+args[1]);
-      p2x = Math.floor(+args[2]);
-      p2y = Math.floor(+args[3]);
-    } else if (args.length === 2) {
-      p1x = Math.floor(+args[0] / channelGame.table.yLength) + 1;
-      p1y = (Math.floor(+args[0]) % channelGame.table.yLength) + 1;
-      p2x = Math.floor(+args[1] / channelGame.table.yLength) + 1;
-      p2y = (Math.floor(+args[1]) % channelGame.table.yLength) + 1;
-    } else return "参数数量错误";
-    if (isNaN(p1x) || isNaN(p1y) || isNaN(p2x) || isNaN(p2y)) return "参数错误";
-    const p1 = new LinkPoint(p1x, p1y);
-    const p2 = new LinkPoint(p2x, p2y);
+    if (!linkGame.isPlaying) return "游戏还没开始呢";
+
+    if (args.length !== 2) return "参数数量错误";
+
+    const p1: LinkPoint = Table.order2Point(Math.floor(+args[0]),linkGame.table);
+    const p2: LinkPoint = Table.order2Point(Math.floor(+args[1]),linkGame.table);
     return await checkLickGame(session, p1, p2);
   });
 
   async function checkLickGame(session: Session, p1: LinkPoint, p2: LinkPoint) {
-    const channelGame =
+    const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
-    if (
-      !channelGame.table.pattern[p1.x]?.[p1.y] ||
-      !channelGame.table.pattern[p2.x]?.[p2.y]
-    ) {
-      const imgUrl = await linkGameDraw(
-        session,
-        config,
-        channelGame.patterns,
-        channelGame.table
-      );
-      session.send(h.img(imgUrl));
-      return "选择的位置上没有图案呀";
-    }
-    if (
-      channelGame.table.pattern[p1.x]?.[p1.y] !==
-      channelGame.table.pattern[p2.x]?.[p2.y]
-    ) {
-      const imgUrl = await linkGameDraw(
-        session,
-        config,
-        channelGame.patterns,
-        channelGame.table
-      );
-      session.send(h.img(imgUrl));
-      return "这两个位置的图案不相同";
-    }
-    const pathInfo = channelGame.table.checkPath(config, p1, p2);
+    const { table, patterns } = linkGame;
+
+    const pathInfo = table.checkPoint(config, p1, p2);
     if (!pathInfo.enableLink) {
-      const imgUrl = await linkGameDraw(
-        session,
-        config,
-        channelGame.patterns,
-        channelGame.table
-      );
+      const imgUrl = await linkGameDraw(session, config, patterns, table);
       session.send(h.img(imgUrl));
       return pathInfo.text;
     } else {
-      const imgUrl1 = await linkGameDraw(
-        session,
-        config,
-        channelGame.patterns,
-        channelGame.table,
-        [pathInfo.linkPath]
-      );
-      channelGame.table.remove(p1, p2);
-      const imgUrl2 = await linkGameDraw(
-        session,
-        config,
-        channelGame.patterns,
-        channelGame.table
-      );
+      const imgUrl1 = await linkGameDraw(session, config, patterns, table, [
+        pathInfo.linkPath,
+      ]);
+      table.remove(p1, p2);
+      const imgUrl2 = await linkGameDraw(session, config, patterns, table);
       await session.send(h.img(imgUrl1));
-      if (channelGame.table.isClear) {
-        channelGame.isPlaying = false;
-        channelGame.listener && channelGame.listener();
+      if (table.isClear) {
+        linkGame.isPlaying = false;
+        linkGame.listener && linkGame.listener();
         const imgUrl = await winLinkGameDraw(session, config);
         session.send(h.img(imgUrl));
         return "所有的图案都被消除啦~";
