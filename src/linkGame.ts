@@ -18,10 +18,20 @@ export class Point {
 
 // 作为table.checkPath的返回值
 export class PathInfo {
+  p1: Point;
+  p2: Point;
   enableLink: boolean;
   linkPath?: Point[];
   text?: string;
-  constructor(enableLink: boolean, linkPath?: Point[], text?: string) {
+  constructor(
+    p1: Point,
+    p2: Point,
+    enableLink: boolean,
+    linkPath?: Point[],
+    text?: string
+  ) {
+    this.p1 = p1;
+    this.p2 = p2;
     this.enableLink = enableLink;
     this.linkPath = linkPath;
     this.text = text;
@@ -66,8 +76,8 @@ export class Table {
     const random = new Random();
     /**
      * 下面这部分是为了让每种图案的数量大致相同，并且全部为一对
-     * *1 先生成一个长度为maxPatternTypes的随机数组patternCreateArr 
-     * *2 逐个放入本局游戏的图案列表patternList，让每种图案至少能出现一次 
+     * *1 先生成一个长度为maxPatternTypes的随机数组patternCreateArr
+     * *2 逐个放入本局游戏的图案列表patternList，让每种图案至少能出现一次
      * *3 为空则再生成
      * *4 把生成的长度为总格子数一半的patternList用concat方法翻倍，就得到了一个所有图案成对的格子图案的数组
      */
@@ -172,7 +182,13 @@ export class Table {
 
     nodeQueue.push(new Node(p1.x, p1.y)); // 将起点加入队列
 
-    let linkPathInfo = new PathInfo(false, null, "这两个位置无法连接...");
+    let linkPathInfo = new PathInfo(
+      p1,
+      p2,
+      false,
+      null,
+      "这两个位置无法连接..."
+    );
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
     const checkTarget = (
@@ -197,7 +213,7 @@ export class Table {
       }
       linkPath.push(new Point(node.x, node.y));
       linkPath.reverse().push(new Point(p2.x, p2.y));
-      linkPathInfo = new PathInfo(true, linkPath, "找到通路");
+      linkPathInfo = new PathInfo(p1, p2, true, linkPath, "找到通路");
       return IS_TARGET;
     };
 
@@ -238,9 +254,9 @@ export class Table {
 
   checkPoint(config: Config, p1: Point, p2: Point): PathInfo {
     if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y))
-      return new PathInfo(false, null, "位置不是数字");
+      return new PathInfo(p1, p2, false, null, "位置不是数字");
     if (p1.x === p2.x && p1.y === p2.y)
-      return new PathInfo(false, null, "位置重复");
+      return new PathInfo(p1, p2, false, null, "位置重复");
     if (
       p1.x < 1 ||
       p1.x > this.xLength ||
@@ -251,30 +267,59 @@ export class Table {
       p2.y < 1 ||
       p2.y > this.yLength
     )
-      return new PathInfo(false, null, "位置超出范围");
+      return new PathInfo(p1, p2, false, null, "位置超出范围");
     if (this.pattern[p1.x][p1.y] === 0 || this.pattern[p2.x][p2.y] === 0)
-      return new PathInfo(false, null, "选择了一个没有图案的位置...");
+      return new PathInfo(p1, p2, false, null, "选择了一个没有图案的位置...");
     if (this.pattern[p1.x][p1.y] !== this.pattern[p2.x][p2.y])
-      return new PathInfo(false, null, "两个位置的图案不一样...");
+      return new PathInfo(p1, p2, false, null, "两个位置的图案不一样...");
 
     return this.checkPath(config, p1, p2);
   }
 
-  checkPointArr(config: Config, pointArr: [Point,Point][]): PathInfo[] {
+  checkPointArr(config: Config, pointPairArr: [Point, Point][]): PathInfo[] {
     const pathInfoArr: PathInfo[] = [];
-    for (let i = 0; i < pointArr.length; i++) {
-      const pathInfo = this.checkPoint(config, pointArr[i][0], pointArr[i][1]);
-      pathInfoArr.push(pathInfo);
+    // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
+    const existPointArr: Point[] = [];
+    for (let i = 0; i < pointPairArr.length; i++) {
+      if (
+        existPointArr.find(
+          (point) =>
+            point.x === pointPairArr[i][0].x && point.y === pointPairArr[i][0].y
+        ) ||
+        existPointArr.find(
+          (point) =>
+            point.x === pointPairArr[i][1].x && point.y === pointPairArr[i][1].y
+        )
+      ) {
+        pathInfoArr.push(
+          new PathInfo(
+            pointPairArr[i][0],
+            pointPairArr[i][1],
+            false,
+            null,
+            "选择了已选择的位置"
+          )
+        );
+      } else {
+        const pathInfo = this.checkPoint(
+          config,
+          pointPairArr[i][0],
+          pointPairArr[i][1]
+        );
+        pathInfoArr.push(pathInfo);
+      }
     }
     return pathInfoArr;
   }
 
   static order2Point(orders: number, table: Table): Point {
-    return new Point(Math.floor(orders / table.yLength) + 1, (orders % table.yLength) + 1);
+    return new Point(
+      Math.floor(orders / table.yLength) + 1,
+      (orders % table.yLength) + 1
+    );
   }
 
   static point2Order(point: Point, table: Table): number {
     return (point.x - 1) * table.yLength + point.y - 1;
   }
-
 }
