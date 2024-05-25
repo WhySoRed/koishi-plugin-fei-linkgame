@@ -44,7 +44,20 @@ export const Config: Schema<Config> = Schema.object({
   pattermType: Schema.array(String)
     .role("table")
     .description("图案种类")
-    .default(["😀", "❤️", "💎", "⚡", "🌸", "🐇", "⏰", "🍎", "🚀", "🎻"]),
+    .default([
+      "😀",
+      "❤️",
+      "💎",
+      "⚡",
+      "🌸",
+      "🐇",
+      "⏰",
+      "🍎",
+      "🚀",
+      "🎻",
+      "🔥",
+      "😈",
+    ]),
 });
 
 declare module "koishi" {
@@ -132,7 +145,7 @@ export function apply(ctx: Context, config: Config) {
         `当前图案库存数：${config.pattermType.length}\n` +
         `当前每局图案最大数量：${maxPatternTypes}\n\n` +
         `想要修改设置请使用指令：\n` +
-        `连连看.设置 [每行个数] [每列个数] [种类数]`
+        `连连看.设置 [每行个数] [每列个数] [种类数]\n`
       );
     } else if (args.length === 3) {
       const xLength = Math.floor(+args[0]);
@@ -185,7 +198,10 @@ export function apply(ctx: Context, config: Config) {
           session.content.startsWith("连") &&
           !session.content.startsWith("连连看")
         ) {
-          const args = session.content.split(" ").filter((v) => v !== "");
+          const content = h
+            .select(session.content, "text")[0]
+            .attrs.content.replace(RegExp("^" + ctx.root.config.prefix), "");
+          const args = content.split(" ").filter((v) => v !== "");
           const pathInfoArr: LinkPathInfo[] = [];
           const removeArr: [LinkPoint, LinkPoint][] = [];
           while (args.length > 2) {
@@ -243,15 +259,6 @@ export function apply(ctx: Context, config: Config) {
             );
             await session.send(h.img(imgUrl2));
           }
-
-          // session.execute(
-          //   "连连看.连 " +
-          //     session.content
-          //       .slice(1)
-          //       .split(" ")
-          //       .filter((v) => v !== "")
-          //       .join(" ")
-          // );
         }
       });
     const random = new Random();
