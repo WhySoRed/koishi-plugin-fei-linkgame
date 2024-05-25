@@ -28,6 +28,7 @@ export const inject = {
 export const name = "fei-linkgame";
 
 export const usage = `
+![logo](./logo.jpg)
 可以在koishi上玩连连看~
 小心不要沉迷...
 `;
