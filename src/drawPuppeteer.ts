@@ -7,6 +7,7 @@ export async function draw(
   session: Session,
   config: Config,
   patterns: string[],
+  patternColors: string[],
   table: Table,
   linkPathArr?: Point[][]
 ) {
@@ -21,6 +22,7 @@ export async function draw(
       const blockSize = ${blockSize};
       const table = ${JSON.stringify(table)};
       const pattern = [""].concat( ${JSON.stringify(patterns)});
+      const patternColor = [""].concat( ${JSON.stringify(patternColors)});
       const linkPathArr = ${JSON.stringify(linkPathArr)};
 
       const canvas = document.getElementById("canvas");
@@ -35,6 +37,7 @@ export async function draw(
         const block = document.createElement("div");
         block.id = "block" + i;
         block.classList.add("block");
+        block.style["color"]= patternColor[table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1]];
         block.innerText = pattern[table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1]];
         cell.appendChild(block);
   
@@ -68,7 +71,7 @@ export async function draw(
           circle.setAttribute("cx", xStart * blockSize);
           circle.setAttribute("cy", yStart * blockSize);
           circle.setAttribute("r", "" + 0.05 * blockSize);
-          circle.setAttribute("fill", "#de3163");
+          circle.setAttribute("fill", "${config.lineColor}");
           svg.appendChild(circle);
   
           const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -76,7 +79,7 @@ export async function draw(
           line.setAttribute("y1", yStart * blockSize);
           line.setAttribute("x2", xEnd * blockSize);
           line.setAttribute("y2", yEnd * blockSize);
-          line.setAttribute("stroke", "#de3163");
+          line.setAttribute("stroke", "${config.lineColor}");
           line.setAttribute("stroke-width", "" + 0.1 * blockSize);
           svg.appendChild(line);
         }
@@ -84,7 +87,7 @@ export async function draw(
         circle.setAttribute("cx", (linkPath[linkPath.length - 1].y + .1 + shifting) * blockSize);
         circle.setAttribute("cy", (linkPath[linkPath.length - 1].x + .1 + shifting) * blockSize);
         circle.setAttribute("r", "" + 0.05 * blockSize);
-        circle.setAttribute("fill", "#de3163");
+        circle.setAttribute("fill", "${config.lineColor}");
         svg.appendChild(circle);
         shifting += 0.03;
       }
@@ -101,8 +104,8 @@ export async function draw(
       grid-template-columns: 0.6fr repeat(${table.yLength}, 1fr) 0.6fr;
       grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr) 0.6fr;
       background: linear-gradient(to bottom right,
-          #002a33,
-          #002129);
+          ${config.backGroundColorStart},
+          ${config.backGroundColorEnd});
     }
 
     svg {
@@ -129,15 +132,15 @@ export async function draw(
       height: 80%;
       border-radius: 10%;
       font-size: ${0.4 * blockSize}px;
-      box-shadow: #00a5bf ${0.05 * blockSize}px ${0.05 * blockSize}px;
-      background: #fcf5f7;
+      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${0.05 * blockSize}px;
+      background: ${config.blockColor};
     }
 
     .number {
       position: absolute;
       bottom: ${0.1 * blockSize}px;
       left: ${0.12 * blockSize}px;
-      color: #de3163;
+      color: ${config.lineColor};
       font-size: ${0.18 * blockSize}px;
 
     }
@@ -164,32 +167,32 @@ export async function drawWelcome(session: Session, config: Config) {
     <svg>
       <line x1="${2.55 * blockSize}" y1="${-0.5 * blockSize}"
         x2="${1.05 * blockSize}" y2="${1.0 * blockSize}"
-        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
       <circle cx="${1.05 * blockSize}" cy="${1.05 * blockSize}"
-        r="${0.05 * blockSize}" fill="#de3163" />
+        r="${0.05 * blockSize}" fill="${config.lineColor}" />
       <line x1="${1.05 * blockSize}" y1="${1.0 * blockSize}"
         x2="${2.05 * blockSize}" y2="${2.0 * blockSize}" 
-        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
       <circle cx="${2.05 * blockSize}" cy="${2.05 * blockSize}" 
-        r="${0.05 * blockSize}" fill="#de3163" />
+        r="${0.05 * blockSize}" fill="${config.lineColor}" />
       <line x1="${2.05 * blockSize}" y1="${2.0 * blockSize}" 
         x2="${1.05 * blockSize}" y2="${3.0 * blockSize}" 
-        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
     </svg>
     <svg>
       <line x1="${2.5 * blockSize}" y1="${-0.5 * blockSize}" 
         x2="${1.0 * blockSize}" y2="${1.0 * blockSize}" 
-        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
       <circle cx="${1.0 * blockSize}" 
-        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="#de3163" />
+        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="${config.lineColor}" />
       <line x1="${1.0 * blockSize}" y1="${1.0 * blockSize}" 
         x2="${2.0 * blockSize}" y2="${2.0 * blockSize}" 
-        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
       <circle cx="${2.0 * blockSize}" cy="${2.0 * blockSize}" 
-        r="${0.05 * blockSize}" fill="#de3163" />
+        r="${0.05 * blockSize}" fill="${config.lineColor}" />
       <line x1="${2.0 * blockSize}" y1="${2.0 * blockSize}" 
         x2="${1.0 * blockSize}" y2="${3.0 * blockSize}" 
-        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
     </svg>
     <div id="boy">🤔</div>
   </div>
@@ -200,8 +203,8 @@ export async function drawWelcome(session: Session, config: Config) {
       width: ${4 * blockSize}px;
       height: ${3 * blockSize}px;
       background: linear-gradient(to bottom right,
-          #002a33,
-          #002129);
+          ${config.backGroundColorStart},
+          ${config.backGroundColorEnd});
     }
 
     #boy {
@@ -250,7 +253,7 @@ export async function drawWelcome(session: Session, config: Config) {
       position: absolute;
       width: 100%;
       height: 100%;
-      background-color: #de3163;
+      background-color: ${config.lineColor};
       opacity: 0.4;
     }
 
@@ -285,8 +288,8 @@ export async function drawWin(session: Session, config: Config) {
       width: ${4 * blockSize}px;
       height: ${3 * blockSize}px;
       background: linear-gradient(to bottom right,
-          #002a33,
-          #002129);
+          ${config.backGroundColorStart},
+          ${config.backGroundColorEnd});
     }
 
     #boy {
@@ -344,8 +347,8 @@ export async function drawOver(session: Session, config: Config) {
       width: ${4 * blockSize}px;
       height: ${3 * blockSize}px;
       background: linear-gradient(to bottom right,
-          #002a33,
-          #002129);
+          ${config.backGroundColorStart},
+          ${config.backGroundColorEnd});
     }
   </style>
 </body>

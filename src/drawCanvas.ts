@@ -7,6 +7,7 @@ export async function draw(
   session: Session,
   config: Config,
   patterns: string[],
+  patternColors: string[],
   table: Table,
   linkPathArr?: Point[][]
 ): Promise<string> {
@@ -54,18 +55,18 @@ export async function draw(
     0.1 * blockSize
   );
   ctxBlock.closePath();
-  ctxBlock.fillStyle = "#fcf5f7";
+  ctxBlock.fillStyle = config.blockColor;
   ctxBlock.fill();
   const block = await patternBlockCanvas.toDataURL("image/png");
-  ctxBlock.fillStyle = "#00a5bf";
+  ctxBlock.fillStyle = config.blockShadowColor;
   ctxBlock.fill();
   const blockShadow = await patternBlockCanvas.toDataURL("image/png");
 
   const canvas = await session.app.canvas.createCanvas(width, height);
   const ctx = canvas.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#002a33");
-  gradient.addColorStop(1, "#002129");
+  gradient.addColorStop(0, config.backGroundColorStart);
+  gradient.addColorStop(1, config.backGroundColorEnd);
 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
@@ -75,7 +76,7 @@ export async function draw(
 
   ctx.translate(-0.4 * blockSize, -0.4 * blockSize);
 
-  ctx.fillStyle = "#fcf5f7";
+  ctx.fillStyle = config.blockColor;
   ctx.font = `${0.4 * blockSize}px`;
   for (let i = 0; i < table.yLength + 2; i++) {
     for (let j = 0; j < table.xLength + 2; j++) {
@@ -88,13 +89,17 @@ export async function draw(
         );
         ctx.drawImage(patternBlock, i * blockSize, j * blockSize);
         ctx.restore();
+        ctx.save();
+        ctx.fillStyle =  patternColors[table.pattern[j][i]];
+
         ctx.fillText(
           pattern[table.pattern[j][i]],
           i * blockSize + 0.25 * blockSize,
           j * blockSize + 0.65 * blockSize
         );
+        ctx.restore();
         ctx.save();
-        ctx.fillStyle = "#de3163";
+        ctx.fillStyle = config.lineColor;
         ctx.font = `${0.2 * blockSize}px`;
         ctx.fillText(
           (j - 1) * table.yLength + (i - 1) + "",
@@ -114,7 +119,7 @@ export async function draw(
   for (const i in linkPathArr) {
     const linkPath = linkPathArr[i];
     if (linkPath.length) {
-      ctx.strokeStyle = "#de3163";
+      ctx.strokeStyle = config.lineColor;
       ctx.lineWidth = 0.1 * blockSize;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -157,8 +162,8 @@ export async function drawWin(session: Session, config: Config) {
   );
   const ctx = canvas.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3 * blockSize);
-  gradient.addColorStop(0, "#002a33");
-  gradient.addColorStop(1, "#002129");
+  gradient.addColorStop(0, config.backGroundColorStart);
+  gradient.addColorStop(1, config.backGroundColorEnd);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
 
@@ -197,8 +202,8 @@ export async function drawWelcome(session: Session, config: Config) {
   );
   const ctx = canvas.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3 * blockSize);
-  gradient.addColorStop(0, "#002a33");
-  gradient.addColorStop(1, "#002129");
+  gradient.addColorStop(0, config.backGroundColorStart);
+  gradient.addColorStop(1, config.backGroundColorEnd);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
 
@@ -230,16 +235,16 @@ export async function drawWelcome(session: Session, config: Config) {
 
   ctx.save();
   ctx.globalAlpha = 0.4;
-  ctx.fillStyle = "#de3163";
+  ctx.fillStyle = config.lineColor;
   ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
   ctx.restore();
 
   ctx.save();
-  ctx.strokeStyle = "#de3163";
+  ctx.strokeStyle = config.lineColor;
   ctx.lineWidth = 0.1 * blockSize;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.shadowColor = "#fcf5f7";
+  ctx.shadowColor = config.blockColor;
   ctx.shadowOffsetX = 0.05 * blockSize;
   ctx.beginPath();
   ctx.moveTo(2.5 * blockSize, -0.5 * blockSize);
@@ -266,8 +271,8 @@ export async function drawOver(session: Session, config: Config) {
   );
   const ctx = canvas.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3 * blockSize);
-  gradient.addColorStop(0, "#002a33");
-  gradient.addColorStop(1, "#002129");
+  gradient.addColorStop(0, config.backGroundColorStart);
+  gradient.addColorStop(1, config.backGroundColorEnd);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
 
