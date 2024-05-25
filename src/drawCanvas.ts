@@ -1,5 +1,5 @@
 import { Table, Point } from "./linkGame";
-import { Session, Random } from "koishi";
+import { Session, Random, h } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from ".";
 
@@ -20,6 +20,7 @@ export async function draw(
     blockSize,
     blockSize
   );
+
   const ctxBlock = patternBlockCanvas.getContext("2d");
 
   ctxBlock.beginPath();
@@ -75,7 +76,7 @@ export async function draw(
   ctx.translate(-0.4 * blockSize, -0.4 * blockSize);
 
   ctx.fillStyle = "#fcf5f7";
-  ctx.font = "40px";
+  ctx.font = `${0.4 * blockSize}px`;
   for (let i = 0; i < table.yLength + 2; i++) {
     for (let j = 0; j < table.xLength + 2; j++) {
       if (table.pattern[j][i]) {
@@ -145,7 +146,7 @@ export async function draw(
 
   ctx.translate(0.4 * blockSize, 0.4 * blockSize);
 
-  return canvas.toDataURL("image/png");
+  return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
 export async function drawWin(session: Session, config: Config) {
@@ -185,7 +186,7 @@ export async function drawWin(session: Session, config: Config) {
   ctx.fillText("🎆", -0.5 * blockSize, 2.8 * blockSize);
   ctx.restore();
 
-  return canvas.toDataURL("image/png");
+  return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
 export async function drawWelcome(session: Session, config: Config) {
@@ -254,7 +255,7 @@ export async function drawWelcome(session: Session, config: Config) {
   ctx.fillText("🤔", 2.2 * blockSize, 1.5 * blockSize);
   ctx.restore();
 
-  return canvas.toDataURL("image/png");
+  return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
 export async function drawOver(session: Session, config: Config) {
@@ -276,5 +277,5 @@ export async function drawOver(session: Session, config: Config) {
   ctx.fillText("🥀", 1.2 * blockSize, 2.1 * blockSize);
   ctx.restore();
 
-  return canvas.toDataURL("image/png");
+  return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
