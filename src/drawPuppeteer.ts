@@ -13,8 +13,6 @@ export async function draw(
   const blockSize = config.blockSize;
   const width = (table.yLength + 2 - 0.8) * blockSize;
   const height = (table.xLength + 2 - 0.8) * blockSize;
-
-  console.log(JSON.stringify(linkPathArr))
   const html = `
 <body>
   <div id="canvas">
@@ -144,7 +142,7 @@ export async function draw(
 
     }
   </style>
-</body>`;
+  </body>`;
   const img = await session.app.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
@@ -153,12 +151,207 @@ export async function draw(
 }
 
 export async function drawWelcome(session: Session, config: Config) {
+  const blockSize = config.blockSize;
+  const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
   const html: string = `
-  <canvas ></canvas>
+  <body>
+  <div id="canvas">
+    <div id="emoji1" class="emoji">${randomPatternArr[0]}</div>
+    <div id="emoji3" class="emoji">${randomPatternArr[1]}</div>
+    <div id="emoji4" class="emoji">${randomPatternArr[2]}</div>
+    <div id="emoji2" class="emoji">${randomPatternArr[3]}</div>
+    <div id="mask"></div>
+    <svg>
+      <line x1="${2.55 * blockSize}" y1="${-0.5 * blockSize}"
+        x2="${1.05 * blockSize}" y2="${1.0 * blockSize}"
+        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+      <circle cx="${1.05 * blockSize}" cy="${1.05 * blockSize}"
+        r="${0.05 * blockSize}" fill="#de3163" />
+      <line x1="${1.05 * blockSize}" y1="${1.0 * blockSize}"
+        x2="${2.05 * blockSize}" y2="${2.0 * blockSize}" 
+        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+      <circle cx="${2.05 * blockSize}" cy="${2.05 * blockSize}" 
+        r="${0.05 * blockSize}" fill="#de3163" />
+      <line x1="${2.05 * blockSize}" y1="${2.0 * blockSize}" 
+        x2="${1.05 * blockSize}" y2="${3.0 * blockSize}" 
+        stroke="#fcf5f7" stroke-width="${0.1 * blockSize}" />
+    </svg>
+    <svg>
+      <line x1="${2.5 * blockSize}" y1="${-0.5 * blockSize}" 
+        x2="${1.0 * blockSize}" y2="${1.0 * blockSize}" 
+        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+      <circle cx="${1.0 * blockSize}" 
+        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="#de3163" />
+      <line x1="${1.0 * blockSize}" y1="${1.0 * blockSize}" 
+        x2="${2.0 * blockSize}" y2="${2.0 * blockSize}" 
+        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+      <circle cx="${2.0 * blockSize}" cy="${2.0 * blockSize}" 
+        r="${0.05 * blockSize}" fill="#de3163" />
+      <line x1="${2.0 * blockSize}" y1="${2.0 * blockSize}" 
+        x2="${1.0 * blockSize}" y2="${3.0 * blockSize}" 
+        stroke="#de3163" stroke-width="${0.1 * blockSize}" />
+    </svg>
+    <div id="boy">🤔</div>
+  </div>
+  <style>
+    #canvas {
+      font-size: ${blockSize}px;
+      position: relative;
+      width: ${4 * blockSize}px;
+      height: ${3 * blockSize}px;
+      background: linear-gradient(to bottom right,
+          #002a33,
+          #002129);
+    }
+
+    #boy {
+      position: absolute;
+      top: 35%;
+      left: 40%;
+      rotate: 0.4rad;
+      font-size: 1.5em;
+    }
+
+    div,
+    svg,
+    canvas {
+      position: absolute;
+    }
+
+    #emoji1 {
+      top: 0%;
+      left: 0%;
+      font-size: 1.7em;
+      rotate: -0.4rad;
+    }
+
+    #emoji2 {
+      top: 25%;
+      right: -7%;
+      font-size: 1.2em;
+      rotate: 0.3rad;
+    }
+
+    #emoji3 {
+      bottom: 50%;
+      left: 47%;
+      font-size: 1.3em;
+      rotate: 0.4rad;
+    }
+
+    #emoji4 {
+      bottom: 5%;
+      right: 44%;
+      font-size: 1.5em;
+      rotate: -0.1rad;
+    }
+
+    #mask {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #de3163;
+      opacity: 0.4;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</body>
+  `;
+  const img = await session.app.puppeteer.render(html, async (page, next) => {
+    const canvas = await page.$("#canvas");
+    return await next(canvas);
+  });
+  return img;
+}
+
+export async function drawWin(session: Session, config: Config) {
+  const blockSize = config.blockSize;
+  const html: string = `
+  <body>
+  <div id="canvas">
+    <div id="fireworks1">🎇</div>
+    <div id="cup">🏆</div>
+    <div id="boy">🥳</div>
+    <div id="fireworks2">🎆</div>
+  </div>
+  <style>
+    #canvas {
+      font-size: ${blockSize}px;
+      position: relative;
+      width: ${4 * blockSize}px;
+      height: ${3 * blockSize}px;
+      background: linear-gradient(to bottom right,
+          #002a33,
+          #002129);
+    }
+
+    #boy {
+      position: absolute;
+      top: 35%;
+      left: 40%;
+      rotate: 0.4rad;
+      font-size: 1.5em;
+    }
+
+    #cup {
+      position: absolute;
+      bottom: 18%;
+      rotate: -.1rad;
+      font-size: 2em;
+    }
+
+    #fireworks1 {
+      position: absolute;
+      top: -15%;
+      left: 60%;
+      font-size: 1.5em;
+    }
+
+    #fireworks2 {
+      position: absolute;
+      top: 40%;
+      left: -11%;
+      font-size: 1.5em;
+    }
+  </style>
+</body>
   `;
 
   const img = await session.app.puppeteer.render(html, async (page, next) => {
-    const canvas = await page.$("body");
+    const canvas = await page.$("#canvas");
+    return await next(canvas);
+  });
+  return img;
+}
+
+export async function drawOver(session: Session, config: Config) {
+  const blockSize = config.blockSize;
+  const html = `
+  <body>
+  <div id="canvas">
+    <div id="sadflower">🥀</div>
+  </div>
+  <style>
+    #canvas {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: ${blockSize}px;
+      width: ${4 * blockSize}px;
+      height: ${3 * blockSize}px;
+      background: linear-gradient(to bottom right,
+          #002a33,
+          #002129);
+    }
+  </style>
+</body>
+  `;
+  const img = await session.app.puppeteer.render(html, async (page, next) => {
+    const canvas = await page.$("#canvas");
     return await next(canvas);
   });
   return img;

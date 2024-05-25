@@ -14,6 +14,8 @@ import {
 import {
   draw as puppeteerDraw,
   drawWelcome as puppeteerDrawWelcome,
+  drawWin as puppeteerDrawWin,
+  drawOver as puppeteerDrawOver,
 } from "./drawPuppeteer";
 import {} from "koishi-plugin-puppeteer";
 
@@ -95,9 +97,9 @@ export function apply(ctx: Context, config: Config) {
   const pptrOn = ctx.puppeteer ? true : false;
 
   const linkGameDraw = pptrOn ? puppeteerDraw : canvasDraw;
-  const winLinkGameDraw = pptrOn ? canvasDrawWin : canvasDrawWin;
-  const welcomeLinkGameDraw = pptrOn ? canvasDrawWelcome : canvasDrawWelcome;
-  const overLinkGameDraw = pptrOn ? canvasDrawOver : canvasDrawOver;
+  const winLinkGameDraw = pptrOn ? puppeteerDrawWin : canvasDrawWin;
+  const welcomeLinkGameDraw = pptrOn ? puppeteerDrawWelcome : canvasDrawWelcome;
+  const overLinkGameDraw = pptrOn ? puppeteerDrawOver : canvasDrawOver;
 
   const linkGameTemp: { [key: string]: LinkGame } = {};
 
@@ -121,10 +123,9 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.command("连连看").action(async ({ session }) => {
     const img = await welcomeLinkGameDraw(session, config);
-    console.log(img);
     await session.send(
       img +
-        `欢迎来玩...\n` +
+        `一起来玩...\n` +
         `KOISHI连连看~\n` +
         `指令一览：\n\n` +
         `连连看.开始\n` +
@@ -257,6 +258,7 @@ export function apply(ctx: Context, config: Config) {
       if (!isPlaying) return "游戏还没开始呢";
 
       if (args.length % 2 !== 0) return "参数数量错误";
+      // 这部分用于把传入的数对拆分
       const pointArr = [...args];
       const pointPairArr: [LinkPoint, LinkPoint][] = [];
       while (pointArr.length > 0) {
