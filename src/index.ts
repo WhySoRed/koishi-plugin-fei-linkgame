@@ -77,7 +77,7 @@ export interface LinkGameData {
 }
 class LinkGame {
   isPlaying: boolean = false;
-  listener: () => void;
+  removeListener: () => void;
   patterns: string[];
   lastLinkTime: number;
   table: LinkTable;
@@ -103,7 +103,7 @@ export function apply(ctx: Context, config: Config) {
 
   ctx.on("dispose", () => {
     for (const key in linkGameTemp) {
-      linkGameTemp[key].listener && linkGameTemp[key].listener();
+      linkGameTemp[key].removeListener && linkGameTemp[key].removeListener();
     }
   });
 
@@ -193,7 +193,7 @@ export function apply(ctx: Context, config: Config) {
 
     linkGame.isPlaying = true;
     //游戏过程中的快捷指令
-    linkGame.listener = ctx
+    linkGame.removeListener = ctx
       .channel(session.channelId)
       .on("message", async (session) => {
         if (
@@ -248,7 +248,7 @@ export function apply(ctx: Context, config: Config) {
           }
           if (linkGame.table.isClear) {
             linkGame.isPlaying = false;
-            linkGame.listener && linkGame.listener();
+            linkGame.removeListener && linkGame.removeListener();
             const imgUrl = await winLinkGameDraw(session, config);
             session.send(h.img(imgUrl));
             session.send("所有的图案都被消除啦~");
@@ -290,7 +290,7 @@ export function apply(ctx: Context, config: Config) {
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
     if (!linkGame.isPlaying) return "游戏还没开始呢";
     linkGame.isPlaying = false;
-    linkGame.listener && linkGame.listener();
+    linkGame.removeListener && linkGame.removeListener();
 
     session.send("游戏自我了断了...");
     const imgUrl = await overLinkGameDraw(session, config);
@@ -342,7 +342,7 @@ export function apply(ctx: Context, config: Config) {
       await session.send(h.img(imgUrl1));
       if (table.isClear) {
         linkGame.isPlaying = false;
-        linkGame.listener && linkGame.listener();
+        linkGame.removeListener && linkGame.removeListener();
         const imgUrl = await winLinkGameDraw(session, config);
         session.send(h.img(imgUrl));
         return "所有的图案都被消除啦~";
