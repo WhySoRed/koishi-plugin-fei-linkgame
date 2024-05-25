@@ -4,3 +4,7 @@
 
 koishi连连看
 "# link-game-demo" 
+
+![logo](./logo.jpg)
+
+在koishi玩连连看~

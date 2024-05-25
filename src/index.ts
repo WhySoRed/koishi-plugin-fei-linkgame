@@ -1,8 +1,9 @@
 import { Context, Random, Schema, Session, h } from "koishi";
+import {} from "@koishijs/plugin-help";
+
 import {
   Table as LinkTable,
   Point as LinkPoint,
-  PathInfo as LinkPathInfo,
   Table,
 } from "./linkGame";
 import {
@@ -131,7 +132,8 @@ export function apply(ctx: Context, config: Config) {
         `连连看.开始\n` +
         `连连看.结束\n` +
         `连连看.重排\n` +
-        `连连看.设置\n`
+        `连连看.设置\n` +
+        `连连看.连`
     );
   });
 
