@@ -147,6 +147,13 @@ export class Table {
   }
 
   // 检查是否存在三条直线可以连接的通路
+  /**
+   * 
+   * 
+   * 
+   * 
+   * 
+   */
   checkPath(config: Config, p1: Point, p2: Point): PathInfo {
     // 最大折线数
     let maxLevel = config.maxLink;

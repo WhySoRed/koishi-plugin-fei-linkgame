@@ -98,8 +98,8 @@ export async function draw(
       width: ${width}px;
       height: ${height}px;
       display: grid;
-      grid-template-columns: 0.6fr repeat(6, 1fr) 0.6fr;
-      grid-template-rows: 0.6fr repeat(5, 1fr) 0.6fr;
+      grid-template-columns: 0.6fr repeat(${table.yLength}, 1fr) 0.6fr;
+      grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr) 0.6fr;
       background: linear-gradient(to bottom right,
           #002a33,
           #002129);

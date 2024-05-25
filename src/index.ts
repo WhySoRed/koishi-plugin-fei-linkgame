@@ -1,11 +1,7 @@
 import { Context, Random, Schema, Session, h } from "koishi";
 import {} from "@koishijs/plugin-help";
 
-import {
-  Table as LinkTable,
-  Point as LinkPoint,
-  Table,
-} from "./linkGame";
+import { Table as LinkTable, Point as LinkPoint, Table } from "./linkGame";
 import {
   draw as canvasDraw,
   drawWin as canvasDrawWin,
@@ -287,25 +283,37 @@ export function apply(ctx: Context, config: Config) {
     const { table, patterns } = linkGame;
 
     const pathInfoArr = table.checkPointArr(config, pointPairArr);
-    const truePathInfoArr = pathInfoArr.filter((v) => v.enableLink);
-    const wrongPathInfoArr = pathInfoArr.filter((v) => !v.enableLink);
-    if (truePathInfoArr.length === 0) return "没有可以连接的图案哦~";
-    const removeArr: [LinkPoint, LinkPoint][] = truePathInfoArr.map((info) => [
-      info.p1,
-      info.p2,
-    ]);
-    const linkPathArr = truePathInfoArr.map((info) => info.linkPath);
-    const img1 = await linkGameDraw(
-      session,
-      config,
-      patterns,
-      table,
-      linkPathArr
-    );
-    await session.send(img1);
-    for (const [p1, p2] of removeArr) {
-      table.remove(p1, p2);
+    let truePathInfoArr = pathInfoArr.filter((v) => v.enableLink);
+    let wrongPathInfoArr = pathInfoArr.filter((v) => !v.enableLink);
+    if (truePathInfoArr.length === 0) {
+      if (pointPairArr.length === 1) return pathInfoArr[0].text;
+      return "没有可以连接的图案哦~";
     }
+
+    while (truePathInfoArr.length > 0) {
+      const removeArr: [LinkPoint, LinkPoint][] = truePathInfoArr.map(
+        (info) => [info.p1, info.p2]
+      );
+      const linkPathArr = truePathInfoArr.map((info) => info.linkPath);
+      const img = await linkGameDraw(
+        session,
+        config,
+        patterns,
+        table,
+        linkPathArr
+      );
+      await session.send(img);
+      for (const [p1, p2] of removeArr) {
+        table.remove(p1, p2);
+      }
+      const pathInfoArr = table.checkPointArr(
+        config,
+        wrongPathInfoArr.map((v) => [v.p1, v.p2])
+      );
+      truePathInfoArr = pathInfoArr.filter((v) => v.enableLink);
+      wrongPathInfoArr = pathInfoArr.filter((v) => !v.enableLink);
+    }
+
     if (table.isClear) {
       linkGame.isPlaying = false;
       const img = await winLinkGameDraw(session, config);
