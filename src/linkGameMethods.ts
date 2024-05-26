@@ -17,7 +17,7 @@ export class LinkPoint {
 }
 
 // 作为table.checkPath的返回值
-export class PathInfo {
+export class LinkPathInfo {
   p1: LinkPoint;
   p2: LinkPoint;
   enableLink: boolean;
@@ -153,7 +153,7 @@ export class LinkTable {
    *
    *
    */
-  checkPath(config: Config, p1: LinkPoint, p2: LinkPoint): PathInfo {
+  checkPath(config: Config, p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
     // 最大折线数
     let maxLevel = config.maxLink;
     if (
@@ -188,7 +188,7 @@ export class LinkTable {
 
     nodeQueue.push(new Node(p1.x, p1.y)); // 将起点加入队列
 
-    let linkPathInfo = new PathInfo(
+    let linkPathInfo = new LinkPathInfo(
       p1,
       p2,
       false,
@@ -219,7 +219,7 @@ export class LinkTable {
       }
       linkPath.push(new LinkPoint(node.x, node.y));
       linkPath.reverse().push(new LinkPoint(p2.x, p2.y));
-      linkPathInfo = new PathInfo(p1, p2, true, linkPath, "找到通路");
+      linkPathInfo = new LinkPathInfo(p1, p2, true, linkPath, "找到通路");
       return IS_TARGET;
     };
 
@@ -258,11 +258,11 @@ export class LinkTable {
     return linkPathInfo;
   }
 
-  checkPoint(config: Config, p1: LinkPoint, p2: LinkPoint): PathInfo {
+  checkPoint(config: Config, p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
     if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y))
-      return new PathInfo(p1, p2, false, null, "位置不是数字");
+      return new LinkPathInfo(p1, p2, false, null, "位置不是数字");
     if (p1.x === p2.x && p1.y === p2.y)
-      return new PathInfo(p1, p2, false, null, "位置重复");
+      return new LinkPathInfo(p1, p2, false, null, "位置重复");
     if (
       p1.x < 1 ||
       p1.x > this.xLength ||
@@ -273,11 +273,11 @@ export class LinkTable {
       p2.y < 1 ||
       p2.y > this.yLength
     )
-      return new PathInfo(p1, p2, false, null, "位置超出范围");
+      return new LinkPathInfo(p1, p2, false, null, "位置超出范围");
     if (this.pattern[p1.x][p1.y] === 0 || this.pattern[p2.x][p2.y] === 0)
-      return new PathInfo(p1, p2, false, null, "选择了一个没有图案的位置...");
+      return new LinkPathInfo(p1, p2, false, null, "选择了一个没有图案的位置...");
     if (this.pattern[p1.x][p1.y] !== this.pattern[p2.x][p2.y])
-      return new PathInfo(p1, p2, false, null, "两个位置的图案不一样...");
+      return new LinkPathInfo(p1, p2, false, null, "两个位置的图案不一样...");
 
     return this.checkPath(config, p1, p2);
   }
@@ -285,8 +285,8 @@ export class LinkTable {
   checkPointArr(
     config: Config,
     pointPairArr: [LinkPoint, LinkPoint][]
-  ): PathInfo[] {
-    const pathInfoArr: PathInfo[] = [];
+  ): LinkPathInfo[] {
+    const pathInfoArr: LinkPathInfo[] = [];
     // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
     const existPointArr: LinkPoint[] = [];
     for (let i = 0; i < pointPairArr.length; i++) {
@@ -301,7 +301,7 @@ export class LinkTable {
         )
       ) {
         pathInfoArr.push(
-          new PathInfo(
+          new LinkPathInfo(
             pointPairArr[i][0],
             pointPairArr[i][1],
             false,
@@ -310,12 +310,12 @@ export class LinkTable {
           )
         );
       } else {
-        const pathInfo = this.checkPoint(
+        const LinkPathInfo = this.checkPoint(
           config,
           pointPairArr[i][0],
           pointPairArr[i][1]
         );
-        pathInfoArr.push(pathInfo);
+        pathInfoArr.push(LinkPathInfo);
         existPointArr.push(pointPairArr[i][0]);
         existPointArr.push(pointPairArr[i][1]);
       }

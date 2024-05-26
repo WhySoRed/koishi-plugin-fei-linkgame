@@ -1,7 +1,7 @@
 import { Context, Random, Session, h } from "koishi";
 import { Config } from "./config";
 
-import { LinkTable, LinkPoint, PathInfo } from "./linkGameMethods";
+import { LinkTable, LinkPoint, LinkPathInfo } from "./linkGameMethods";
 import { LinkGameDraw } from "./draw";
 
 import {} from "koishi-plugin-puppeteer";
@@ -16,8 +16,14 @@ export class LinkGame {
   timeLimit: number;
   timeLimitTimer: () => void;
   score: number;
+  lastSession: Session;
   clear() {
     this.timeLimitTimer && this.timeLimitTimer();
+    this.lastLinkTime = null;
+    this.isPlaying = false;
+    this.score = 0;
+    this.combo = 0;
+    this.timeLimit = null;
   }
 }
 
@@ -66,7 +72,7 @@ export async function command(ctx: Context, config: Config) {
     if (maxScore) {
       returnMessage += `\n\n` + `本群目前最高分：${maxScore}~`;
     }
-    await session.send(returnMessage);
+    return returnMessage;
   });
 
   ctx.command("连连看.设置").action(async ({ session, args }) => {
@@ -145,6 +151,7 @@ export async function command(ctx: Context, config: Config) {
     );
     return at + "设置更改成功~";
   });
+
   ctx.command("连连看.设置.限时").action(async ({ session, args }) => {
     const at =
       config.atUser && !session.event.channel.type
@@ -188,10 +195,15 @@ export async function command(ctx: Context, config: Config) {
       config.atUser && !session.event.channel.type
         ? h.at(session.userId) + " "
         : "";
+    let returnMessage = at;
+
     const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
 
-    if (linkGame.isPlaying) return at + `游戏已经开始了`;
+    if (linkGame.isPlaying) {
+      returnMessage += "游戏已经开始了";
+      return returnMessage;
+    }
 
     let linkGameData = (
       await ctx.database.get("linkGameData", { cid: session.cid })
@@ -206,8 +218,10 @@ export async function command(ctx: Context, config: Config) {
     const xLength = linkGameData.xLength;
     const yLength = linkGameData.yLength;
     const maxPatternTypes = linkGameData.maxPatternTypes;
-    if (maxPatternTypes > config.pattermType.length)
-      return at + "现在图案种类比库存多...请更改设置";
+    if (maxPatternTypes > config.pattermType.length) {
+      returnMessage += "现在图案种类比库存多...请更改设置";
+      return returnMessage;
+    }
 
     linkGame.isPlaying = true;
     const random = new Random();
@@ -235,17 +249,16 @@ export async function command(ctx: Context, config: Config) {
       timeLeft,
       timeLimit
     );
-
-    session.send(
-      at +
-        `游戏开始咯~\n` +
-        `大小${linkGame.table.xLength}x${linkGame.table.yLength} 图案数${linkGame.patterns.length}\n` +
-        `连接图案请使用\n` +
-        `"连连看.连"\n` +
-        `需要重排请使用\n` +
-        `"连连看.重排"\n`
-    );
-    session.send(img);
+    returnMessage +=
+      `游戏开始咯~\n` +
+      `大小${linkGame.table.xLength}x${linkGame.table.yLength} 图案数${linkGame.patterns.length}\n` +
+      `连接图案请使用\n` +
+      `"连连看.连"\n` +
+      `需要重排请使用\n` +
+      `"连连看.重排"`;
+    if (config.addSpace) returnMessage += "<message/>";
+    returnMessage += img;
+    return returnMessage;
   });
 
   async function linkGameTimeStart(session: Session, linkGame: LinkGame) {
@@ -264,11 +277,18 @@ export async function command(ctx: Context, config: Config) {
   async function linkGameTimeOut(session: Session) {
     const cid = session.cid;
     const linkGame = linkGameTemp[cid];
-    if (!linkGame) return;
-    linkGame.isPlaying = false;
-    const img = await linkGameDraw.over(session, config);
-    session.send("时间结束了呀...");
-    session.send(img);
+    const message = await linkGameOver(session, linkGame, "时间结束了呀...");
+    try {
+      session.send(message);
+    } catch (e) {
+      try {
+        linkGame.lastSession.send(message);
+      } catch (e) {
+        try {
+          session.bot.sendMessage(session.channelId, message);
+        } catch (e) {}
+      }
+    }
   }
 
   ctx.command("连连看.结束").action(async ({ session }) => {
@@ -279,23 +299,54 @@ export async function command(ctx: Context, config: Config) {
     const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
     if (!linkGame.isPlaying) return at + "游戏还没开始呢";
-    linkGame.isPlaying = false;
-    linkGame.clear();
-    session.send(at + "游戏自我了断了...");
-    const img = await linkGameDraw.over(session, config);
-    session.send(img);
+    return await linkGameOver(session, linkGame, "游戏自我了断了...");
   });
+
+  // 游戏结束
+  async function linkGameOver(
+    session: Session,
+    linkGame: LinkGame,
+    text: string
+  ) {
+    const at =
+      config.atUser && !session.event.channel.type
+        ? h.at(session.userId) + " "
+        : "";
+    linkGame.clear();
+    let returnMessage = at + text;
+    if (config.addSpace) returnMessage += "<message/>";
+    const img = await linkGameDraw.over(session, config);
+    returnMessage += img;
+    if (linkGame.score !== 0) {
+      if (config.addSpace) returnMessage += "<message/>";
+      const linkGameData = await ctx.database.get("linkGameData", {
+        cid: session.cid,
+      });
+      if (linkGameData[0].maxScore < linkGame.score) {
+        await ctx.database.upsert("linkGameData", linkGameData);
+        returnMessage += `本局得分：${linkGame.score}\n`;
+        returnMessage += `新纪录~`;
+      } else returnMessage += `本局得分：${linkGame.score}`;
+    }
+    return returnMessage;
+  }
 
   ctx.command("连连看.重排").action(async ({ session }) => {
     const at =
       config.atUser && !session.event.channel.type
         ? h.at(session.userId) + " "
         : "";
+    let returnMessage = at;
     const cid = session.cid;
     const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
+    linkGame.lastSession = session;
+    linkGame.combo = 0;
     const { isPlaying, table, patterns, patternColors } = linkGame;
 
-    if (!isPlaying) return at + "游戏还没开始呢";
+    if (!isPlaying) {
+      returnMessage += "游戏还没开始呢";
+      return returnMessage;
+    }
     table.shuffle();
     const timeLeft = linkGame.timeLimit - (Date.now() - linkGame.startTime);
     const timeLimit = linkGame.timeLimit;
@@ -309,8 +360,10 @@ export async function command(ctx: Context, config: Config) {
       timeLeft,
       timeLimit
     );
-    session.send(at + "已经重新打乱顺序了~");
-    session.send(img);
+    returnMessage += "已经重新打乱顺序了~";
+    if (config.addSpace) returnMessage += "<message/>";
+    returnMessage += img;
+    return returnMessage;
   });
 
   ctx
@@ -321,13 +374,15 @@ export async function command(ctx: Context, config: Config) {
         config.atUser && !session.event.channel.type
           ? h.at(session.userId) + " "
           : "";
+      let returnMessage = at;
       const cid = session.cid;
       const { isPlaying, table } =
         linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
       if (!isPlaying) return;
 
       if (args.length % 2 !== 0) {
-        session.send(at + "参数数量有问题呀");
+        returnMessage += "参数数量有问题呀";
+        if (config.addSpace) returnMessage += "<message/>";
         args.pop();
       }
 
@@ -345,7 +400,9 @@ export async function command(ctx: Context, config: Config) {
         );
         pointPairArr.push([p1, p2]);
       }
-      return await checkLickGame(session, pointPairArr);
+      returnMessage += await checkLickGame(session, pointPairArr);
+
+      return returnMessage;
     });
 
   async function checkLickGame(
@@ -359,31 +416,47 @@ export async function command(ctx: Context, config: Config) {
 
     const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
+    linkGame.lastSession = session;
     const { table, patterns, patternColors } = linkGame;
+
+    let addScore = 0;
 
     const timeLeft = linkGame.timeLimit - (Date.now() - linkGame.startTime);
     const timeLimit = linkGame.timeLimit;
 
     const pathInfoArr = table.checkPointArr(config, pointPairArr);
     let truePathInfoArr = pathInfoArr.filter(
-      (info: PathInfo) => info.enableLink
+      (info: LinkPathInfo) => info.enableLink
     );
     let wrongPathInfoArr = pathInfoArr.filter(
-      (info: PathInfo) => !info.enableLink
+      (info: LinkPathInfo) => !info.enableLink
     );
 
     if (truePathInfoArr.length === 0) {
+      linkGame.combo = 0;
       if (config.addSpace) returnMessage += "<message/>";
       if (pointPairArr.length === 1) returnMessage += pathInfoArr[0].text;
       else returnMessage += "没有可以连接的图案哦~";
       return returnMessage;
     }
 
+    if (linkGame.timeLimit) {
+      if (!linkGame.combo) {
+        linkGame.combo = 0;
+      }
+      if (!linkGame.score) linkGame.score = 0;
+    }
+
+    let trueTimes = 0;
+
     while (truePathInfoArr.length > 0) {
+      trueTimes += truePathInfoArr.length;
       const removeArr: [LinkPoint, LinkPoint][] = truePathInfoArr.map(
-        (info: PathInfo) => [info.p1, info.p2]
+        (info: LinkPathInfo) => [info.p1, info.p2]
       );
-      const linkPathArr = truePathInfoArr.map((info) => info.linkPath);
+      const linkPathArr = truePathInfoArr.map(
+        (info: LinkPathInfo) => info.linkPath
+      );
       const img = await linkGameDraw.game(
         session,
         config,
@@ -396,18 +469,30 @@ export async function command(ctx: Context, config: Config) {
       );
       returnMessage += img;
       if (config.addSpace) returnMessage += "<message/>";
-
       for (const [p1, p2] of removeArr) {
         table.remove(p1, p2);
       }
       const pathInfoArr = table.checkPointArr(
         config,
-        wrongPathInfoArr.map((info: PathInfo) => [info.p1, info.p2])
+        wrongPathInfoArr.map((info: LinkPathInfo) => [info.p1, info.p2])
       );
-      truePathInfoArr = pathInfoArr.filter((info: PathInfo) => info.enableLink);
+      truePathInfoArr = pathInfoArr.filter(
+        (info: LinkPathInfo) => info.enableLink
+      );
       wrongPathInfoArr = pathInfoArr.filter(
-        (info: PathInfo) => !info.enableLink
+        (info: LinkPathInfo) => !info.enableLink
       );
+    }
+
+    if (trueTimes * config.comboTime < Date.now() - linkGame.lastLinkTime) {
+      linkGame.combo = 0;
+    }
+
+    if (!wrongPathInfoArr.length && linkGame.timeLimit) {
+      for (let i = 0; i < trueTimes; i++) {
+        addScore += 10 * 2 ** linkGame.combo;
+        linkGame.combo++;
+      }
     }
 
     if (table.isClear) {
@@ -424,11 +509,18 @@ export async function command(ctx: Context, config: Config) {
         timeLimit
       );
       returnMessage += resultImg;
-
+      if (config.addSpace) returnMessage += "<message/>";
+      if (linkGame.combo > 1) {
+        returnMessage += `${linkGame.combo}连击！\n`;
+      }
       if (wrongPathInfoArr.length > 0) {
+        if (linkGame.timeLimit) {
+          addScore += 10 * trueTimes;
+          linkGame.combo = 0;
+        }
         const returnStr = wrongPathInfoArr
           .map(
-            (info: PathInfo) =>
+            (info: LinkPathInfo) =>
               "" +
               LinkTable.point2Order(info.p1, table) +
               "与" +
@@ -438,23 +530,39 @@ export async function command(ctx: Context, config: Config) {
           .join("\n");
         returnMessage += returnStr;
       }
+      if (linkGame.timeLimit) {
+        returnMessage += `得分 ${addScore}\n`;
+        returnMessage += `当前得分 ${(linkGame.score += addScore)}\n`;
+      }
     }
+    linkGame.lastLinkTime = Date.now();
     return returnMessage;
   }
 
   async function linkGameWIn(session: Session) {
-    let returnMessage = "所有的图案都被消除啦~"
-
-    if(config.addSpace) returnMessage += "<message/>";
-
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid];
-
-    linkGame.isPlaying = false;
-    linkGame.clear();
+    let returnMessage;
 
     const img = await linkGameDraw.win(session, config);
     returnMessage += img;
+
+    if (config.addSpace) returnMessage += "<message/>";
+    returnMessage += "所有的图案都被消除啦~";
+
+    const cid = session.cid;
+    const linkGame = linkGameTemp[cid];
+    if (linkGame.score !== 0) {
+      const linkGameData = await ctx.database.get("linkGameData", {
+        cid: session.cid,
+      });
+      if (linkGameData[0].maxScore < linkGame.score) {
+        await ctx.database.upsert("linkGameData", linkGameData);
+        returnMessage += `本局得分：${linkGame.score}\n`;
+        returnMessage += `是新纪录~`;
+      } else returnMessage += `本局得分：${linkGame.score}`;
+    }
+
+    linkGame.isPlaying = false;
+    linkGame.clear();
 
     return returnMessage;
   }
