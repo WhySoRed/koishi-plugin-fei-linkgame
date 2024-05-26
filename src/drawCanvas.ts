@@ -1,7 +1,7 @@
 import { Table, Point } from "./linkGame";
 import { Session, Random, h } from "koishi";
 import {} from "koishi-plugin-canvas";
-import { Config } from ".";
+import { Config } from "./config";
 
 export async function draw(
   session: Session,
@@ -9,13 +9,23 @@ export async function draw(
   patterns: string[],
   patternColors: string[],
   table: Table,
-  linkPathArr?: Point[][]
+  linkPathArr: Point[][],
+  timeLimit?: number,
+  timeLimitMax?: number
 ): Promise<string> {
   const blockSize = config.blockSize;
   const pattern = [""].concat(patterns);
+  
+  const timeStartColor = config.timeStartColor;
+  const timeEndColor = config.timeEndColor;
+  
+  timeLimit = 5;
+  timeLimitMax = 10;
 
   const width = (table.yLength + 2 - 0.8) * blockSize;
-  const height = (table.xLength + 2 - 0.8) * blockSize;
+  const height = timeLimitMax
+    ? (table.xLength + 2) * blockSize
+    : (table.xLength + 2 - 0.8) * blockSize;
 
   const patternBlockCanvas = await session.app.canvas.createCanvas(
     blockSize,
@@ -90,14 +100,14 @@ export async function draw(
         ctx.drawImage(patternBlock, i * blockSize, j * blockSize);
         ctx.restore();
         ctx.save();
-        ctx.fillStyle =  patternColors[table.pattern[j][i]];
-
+        ctx.fillStyle = patternColors[table.pattern[j][i]];
         ctx.fillText(
           pattern[table.pattern[j][i]],
           i * blockSize + 0.25 * blockSize,
           j * blockSize + 0.65 * blockSize
         );
         ctx.restore();
+
         ctx.save();
         ctx.fillStyle = config.lineColor;
         ctx.font = `${0.2 * blockSize}px`;
@@ -150,6 +160,32 @@ export async function draw(
   }
 
   ctx.translate(0.4 * blockSize, 0.4 * blockSize);
+
+  if (timeLimitMax) {
+    const timeWidth = (table.yLength - 0.4) * blockSize;
+    const timeHeight = 0.2 * blockSize;
+    const timeGradient = ctx.createLinearGradient(0, 0, timeWidth, 0);
+    timeGradient.addColorStop(1, timeStartColor);
+    timeGradient.addColorStop(0, timeEndColor);
+
+    ctx.save();
+    ctx.fillStyle = config.lineColor;
+    ctx.fillRect(
+      0.8 * blockSize,
+      (table.xLength + 1.4) * blockSize,
+      timeWidth,
+      timeHeight
+    );
+    ctx.restore();
+    ctx.save();
+    ctx.fillStyle = timeGradient;
+    ctx.fillRect(
+      0.8 * blockSize,
+      (table.xLength + 1.4) * blockSize,
+      (timeLimit / timeLimitMax) * timeWidth,
+      timeHeight
+    );
+  }
 
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }

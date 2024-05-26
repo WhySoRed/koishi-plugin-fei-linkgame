@@ -1,7 +1,7 @@
 import { Table, Point } from "./linkGame";
 import { Session, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
-import { Config } from ".";
+import { Config } from "./config";
 
 export async function draw(
   session: Session,
@@ -9,7 +9,10 @@ export async function draw(
   patterns: string[],
   patternColors: string[],
   table: Table,
-  linkPathArr?: Point[][]
+  linkPathArr: Point[][],
+  time?: number,
+  timeLimit?: number
+
 ) {
   const blockSize = config.blockSize;
   const width = (table.yLength + 2 - 0.8) * blockSize;

@@ -1,5 +1,5 @@
 import { Random } from "koishi";
-import { Config } from ".";
+import { Config } from "./config";
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -37,7 +37,6 @@ export class PathInfo {
     this.text = text;
   }
 }
-
 class Node extends Point {
   level: number = 0;
   parent?: Node;
