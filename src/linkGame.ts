@@ -313,6 +313,8 @@ export class Table {
           pointPairArr[i][1]
         );
         pathInfoArr.push(pathInfo);
+        existPointArr.push(pointPairArr[i][0]);
+        existPointArr.push(pointPairArr[i][1]);
       }
     }
     return pathInfoArr;

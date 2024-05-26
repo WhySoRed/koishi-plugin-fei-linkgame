@@ -1,4 +1,4 @@
-import { Context, Random, Session, h } from "koishi";
+import { Context } from "koishi";
 import { Config } from "./config";
 import { command, linkGameTemp } from "./command";
 import {} from "@koishijs/plugin-help";
@@ -9,6 +9,7 @@ export const inject = {
 };
 
 export const name = "fei-linkgame";
+export * from "./config"
 
 export const usage = `
 ![logo](https://forum.koishi.xyz/uploads/default/original/2X/4/4282105b1260c080c3e3082177dbb860ae982193.jpeg)
@@ -51,6 +52,6 @@ export function apply(ctx: Context, config: Config) {
   });
 
   ctx.on("dispose", () => {
-    linkGameTemp.clear();
+    linkGameTemp.clearAll();
   });
 }

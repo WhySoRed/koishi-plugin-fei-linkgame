@@ -1,7 +1,7 @@
-import { Table, Point } from "./linkGame";
+import { Table, Point } from "../linkGame";
 import { Session, Random, h } from "koishi";
 import {} from "koishi-plugin-canvas";
-import { Config } from "./config";
+import { Config } from "../config";
 
 export async function draw(
   session: Session,

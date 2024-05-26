@@ -2,21 +2,9 @@ import { Context, Random, Session, h } from "koishi";
 import { Config } from "./config";
 
 import { Table as LinkTable, Point as LinkPoint, Table } from "./linkGame";
-import {
-  draw as canvasDraw,
-  drawWin as canvasDrawWin,
-  drawWelcome as canvasDrawWelcome,
-  drawOver as canvasDrawOver,
-} from "./drawCanvas";
-import {
-  draw as puppeteerDraw,
-  drawWelcome as puppeteerDrawWelcome,
-  drawWin as puppeteerDrawWin,
-  drawOver as puppeteerDrawOver,
-} from "./drawPuppeteer";
+import { LinkGameDraw } from "./draw";
 
 import {} from "koishi-plugin-puppeteer";
-
 export class LinkGame {
   isPlaying: boolean = false;
   patterns: string[];
@@ -35,30 +23,31 @@ export class LinkGame {
 }
 
 export const linkGameTemp = {
-  clear() {
+  clear(cid: string) {
+    const linkGame = linkGameTemp[cid];
+    if (!linkGame) return;
+    linkGame.clear();
+    delete linkGameTemp[cid];
+  },
+
+  clearAll() {
     for (const key in this) {
       if (key === "clear") continue;
       this[key].clear();
       delete this[key];
     }
-  }
+  },
 };
 
 export async function command(ctx: Context, config: Config) {
-  
-  const pptrOn = ctx.puppeteer ? true : false;
-
-  const linkGameDraw = pptrOn ? puppeteerDraw : canvasDraw;
-  const winLinkGameDraw = pptrOn ? puppeteerDrawWin : canvasDrawWin;
-  const welcomeLinkGameDraw = pptrOn ? puppeteerDrawWelcome : canvasDrawWelcome;
-  const overLinkGameDraw = pptrOn ? puppeteerDrawOver : canvasDrawOver;
+  const linkGameDraw = new LinkGameDraw(ctx);
 
   ctx.command("连连看").action(async ({ session }) => {
     const at =
       config.atUser && !session.event.channel.type
         ? h.at(session.userId) + " "
         : "";
-    const img = await welcomeLinkGameDraw(session, config);
+    const img = await linkGameDraw.welcome(session, config);
     const maxScore = (
       await ctx.database.get("linkGameData", {
         cid: session.cid,
@@ -200,6 +189,7 @@ export async function command(ctx: Context, config: Config) {
         : "";
     const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
+
     if (linkGame.isPlaying) return at + `游戏已经开始了`;
 
     let linkGameData = (
@@ -228,7 +218,7 @@ export async function command(ctx: Context, config: Config) {
       linkGame.patternColors.push(config.lineColor);
     }
     linkGame.table = new LinkTable(xLength, yLength, maxPatternTypes);
-    const img = await linkGameDraw(
+    const img = await linkGameDraw.game(
       session,
       config,
       linkGame.patterns,
@@ -247,24 +237,31 @@ export async function command(ctx: Context, config: Config) {
     );
     session.send(img);
     if (linkGameData.timeLimitOn) {
-      linkGame.startTime = Date.now();
-      linkGame.timeLimit =
-        (linkGame.table.xLength *
-          linkGame.table.yLength *
-          config.timeLimitEachPair) /
-        2;
-      linkGame.timeLimitTimer = ctx.setTimeout(
-        async () => linkGameTimeOut(session),
-        linkGame.timeLimit
-      );
+      linkGameTimeStart(session, linkGame);
     }
   });
+
+  async function linkGameTimeStart(session: Session, linkGame: LinkGame) {
+    linkGame.startTime = Date.now();
+    linkGame.timeLimit =
+      (linkGame.table.xLength *
+        linkGame.table.yLength *
+        config.timeLimitEachPair) /
+      2;
+    linkGame.timeLimitTimer = ctx.setTimeout(
+      async () => linkGameTimeOut(session),
+      linkGame.timeLimit
+    );
+  }
 
   async function linkGameTimeOut(session: Session) {
     const cid = session.cid;
     const linkGame = linkGameTemp[cid];
     if (!linkGame) return;
     linkGame.isPlaying = false;
+    const img = await linkGameDraw.over(session, config);
+    session.send("时间结束了呀...");
+    session.send(img);
   }
 
   ctx.command("连连看.结束").action(async ({ session }) => {
@@ -278,7 +275,7 @@ export async function command(ctx: Context, config: Config) {
     linkGame.isPlaying = false;
 
     session.send(at + "游戏自我了断了...");
-    const img = await overLinkGameDraw(session, config);
+    const img = await linkGameDraw.over(session, config);
     session.send(img);
   });
 
@@ -292,7 +289,7 @@ export async function command(ctx: Context, config: Config) {
       linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
     if (!isPlaying) return at + "游戏还没开始呢";
     table.shuffle();
-    const img = await linkGameDraw(
+    const img = await linkGameDraw.game(
       session,
       config,
       patterns,
@@ -364,7 +361,7 @@ export async function command(ctx: Context, config: Config) {
         (info) => [info.p1, info.p2]
       );
       const linkPathArr = truePathInfoArr.map((info) => info.linkPath);
-      const img = await linkGameDraw(
+      const img = await linkGameDraw.game(
         session,
         config,
         patterns,
@@ -385,12 +382,9 @@ export async function command(ctx: Context, config: Config) {
     }
 
     if (table.isClear) {
-      linkGame.isPlaying = false;
-      const img = await winLinkGameDraw(session, config);
-      session.send(img);
-      return at + "所有的图案都被消除啦~";
     }
-    const img2 = await linkGameDraw(
+
+    const img2 = await linkGameDraw.game(
       session,
       config,
       patterns,
@@ -412,5 +406,21 @@ export async function command(ctx: Context, config: Config) {
         .join("\n");
       return at + "\n" + returnStr;
     }
+  }
+
+  async function linkGameWIn(session: Session) {
+    const at =
+      config.atUser && !session.event.channel.type
+        ? h.at(session.userId) + " "
+        : "";
+    const cid = session.cid;
+    const linkGame = linkGameTemp[cid];
+
+    linkGame.isPlaying = false;
+    linkGame.clear();
+
+    const img = await linkGameDraw.win(session, config);
+    session.send(img);
+    return at + "所有的图案都被消除啦~";
   }
 }
