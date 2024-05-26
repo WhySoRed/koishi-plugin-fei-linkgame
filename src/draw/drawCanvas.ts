@@ -13,7 +13,6 @@ export async function draw(
   timeLeft?: number,
   timeLimit?: number
 ): Promise<string> {
-
   const blockSize = config.blockSize;
   const pattern = [""].concat(patterns);
 
@@ -230,69 +229,132 @@ export async function drawWin(session: Session, config: Config) {
 
 export async function drawWelcome(session: Session, config: Config) {
   const blockSize = config.blockSize;
+  const table = {
+    xLength: 6,
+    yLength: 8,
+    maxPatternTypes: 9,
+    pattern: [
+      [],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 2, 2 /**/, 1 /**/, 0, 0, 0],
+      [0, 0, 4, 4, 2, 3 /**/, 4 /**/, 4, 0, 0],
+      [0, 0, 0, 0, 3, 2 /**/, 3, 1, 4, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [],
+    ],
+  };
+  const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
+  const pattern = [""].concat(randomPatternArr);
+  const width = (table.yLength + 2 - 0.8) * blockSize;
+  const height = (table.xLength + 2 - 0.8) * blockSize;
+
+  const xShifting = -4.41 * blockSize;
+  const yShifting = -2.41 * blockSize;
+
   const canvas = await session.app.canvas.createCanvas(
-    4 * blockSize,
-    3 * blockSize
+    2.5 * blockSize,
+    2.5 * blockSize
   );
   const ctx = canvas.getContext("2d");
-  const gradient = ctx.createLinearGradient(0, 0, 4 * blockSize, 3 * blockSize);
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, config.backGroundColorStart);
   gradient.addColorStop(1, config.backGroundColorEnd);
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
+  ctx.fillRect(xShifting, yShifting, 9.2 * blockSize, 7.2 * blockSize);
 
-  const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
+  const patternBlockCanvas = await session.app.canvas.createCanvas(
+    blockSize,
+    blockSize
+  );
 
-  ctx.save();
-  ctx.font = `${1.7 * blockSize}px`;
-  ctx.rotate(-0.4);
-  ctx.fillText(randomPatternArr[0], -0.5 * blockSize, 2.2 * blockSize);
-  ctx.restore();
+  const ctxBlock = patternBlockCanvas.getContext("2d");
 
-  ctx.save();
-  ctx.font = `${1.3 * blockSize}px`;
-  ctx.rotate(0.4);
-  ctx.fillText(randomPatternArr[1], 2 * blockSize, 0 * blockSize);
-  ctx.restore();
+  ctxBlock.beginPath();
+  ctxBlock.moveTo(0.2 * blockSize, 0.1 * blockSize);
+  ctxBlock.lineTo(0.8 * blockSize, 0.1 * blockSize);
+  ctxBlock.quadraticCurveTo(
+    0.9 * blockSize,
+    0.1 * blockSize,
+    0.9 * blockSize,
+    0.2 * blockSize
+  );
+  ctxBlock.lineTo(0.9 * blockSize, 0.8 * blockSize);
+  ctxBlock.quadraticCurveTo(
+    0.9 * blockSize,
+    0.9 * blockSize,
+    0.8 * blockSize,
+    0.9 * blockSize
+  );
+  ctxBlock.lineTo(0.2 * blockSize, 0.9 * blockSize);
+  ctxBlock.quadraticCurveTo(
+    0.1 * blockSize,
+    0.9 * blockSize,
+    0.1 * blockSize,
+    0.8 * blockSize
+  );
+  ctxBlock.lineTo(0.1 * blockSize, 0.2 * blockSize);
+  ctxBlock.quadraticCurveTo(
+    0.1 * blockSize,
+    0.1 * blockSize,
+    0.2 * blockSize,
+    0.1 * blockSize
+  );
+  ctxBlock.closePath();
+  ctxBlock.fillStyle = config.blockColor;
+  ctxBlock.fill();
+  const block = await patternBlockCanvas.toDataURL("image/png");
+  ctxBlock.fillStyle = config.blockShadowColor;
+  ctxBlock.fill();
+  const blockShadow = await patternBlockCanvas.toDataURL("image/png");
 
-  ctx.save();
-  ctx.font = `${1.5 * blockSize}px`;
-  ctx.rotate(-0.1);
-  ctx.fillText(randomPatternArr[2], -0.2 * blockSize, 2.7 * blockSize);
-  ctx.restore();
+  const patternBlock = await session.app.canvas.loadImage(block);
+  const patternBlockShadow = await session.app.canvas.loadImage(blockShadow);
 
-  ctx.save();
-  ctx.font = `${1.2 * blockSize}px`;
-  ctx.rotate(0.3);
-  ctx.fillText(randomPatternArr[3], 3 * blockSize, 1 * blockSize);
-  ctx.restore();
+  ctx.translate(-0.4 * blockSize, -0.4 * blockSize);
 
-  ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.fillStyle = config.lineColor;
-  ctx.fillRect(0, 0, 4 * blockSize, 3 * blockSize);
-  ctx.restore();
+  ctx.fillStyle = config.blockColor;
+  ctx.font = `${0.4 * blockSize}px`;
+  for (let i = 0; i < table.yLength + 2; i++) {
+    for (let j = 0; j < table.xLength + 2; j++) {
+      if (table.pattern[j][i]) {
+        ctx.save();
+        ctx.drawImage(
+          patternBlockShadow,
+          xShifting + (i + 0.05) * blockSize,
+          yShifting + (j + 0.05) * blockSize
+        );
+        ctx.drawImage(
+          patternBlock,
+          xShifting + i * blockSize,
+          yShifting + j * blockSize
+        );
+        ctx.restore();
+        ctx.save();
+        ctx.fillStyle = config.lineColor;
+        ctx.fillText(
+          pattern[table.pattern[j][i]],
+          xShifting + i * blockSize + 0.25 * blockSize,
+          yShifting + j * blockSize + 0.65 * blockSize
+        );
+        ctx.restore();
 
-  ctx.save();
-  ctx.strokeStyle = config.lineColor;
-  ctx.lineWidth = 0.1 * blockSize;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.shadowColor = config.blockColor;
-  ctx.shadowOffsetX = 0.05 * blockSize;
-  ctx.beginPath();
-  ctx.moveTo(2.5 * blockSize, -0.5 * blockSize);
-  ctx.lineTo(blockSize, blockSize);
-  ctx.lineTo(2 * blockSize, 2 * blockSize);
-  ctx.lineTo(blockSize, 3 * blockSize);
-  ctx.stroke();
-  ctx.restore();
+        ctx.save();
+        ctx.fillStyle = config.lineColor;
+        ctx.font = `${0.2 * blockSize}px`;
+        ctx.fillText(
+          (j - 1) * table.yLength + (i - 1) + "",
+          xShifting + i * blockSize + 0.15 * blockSize,
+          yShifting + j * blockSize + 0.85 * blockSize
+        );
+        ctx.restore();
+      }
+    }
+  }
 
-  ctx.save();
-  ctx.font = `${1.5 * blockSize}px`;
-  ctx.rotate(0.4);
-  ctx.fillText("🤔", 2.2 * blockSize, 1.5 * blockSize);
-  ctx.restore();
+  ctx.translate(0.4 * blockSize, 0.4 * blockSize);
+
+  ctx.rotate(0.2618);
 
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }

@@ -97,7 +97,9 @@ export async function command(ctx: Context, config: Config) {
       `每行图案个数：${yLength}\n` +
       `当前图案库存数：${config.pattermType.length}\n` +
       `是否开启限时模式：${linkGameData.timeLimitOn ? "是" : "否"}\n` +
-      `当前每局图案最大数量：${maxPatternTypes}\n\n`
+      `当前每局图案最大数量：${maxPatternTypes}\n\n` +
+      `查看设置指令请发送\n` +
+      `help 连连看.设置`
     );
   });
 

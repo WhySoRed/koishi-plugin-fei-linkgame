@@ -189,7 +189,6 @@ export async function draw(
     }
   </style>
   </body>`;
-  console.log(html);
   const img = await session.app.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
@@ -202,116 +201,94 @@ export async function drawWelcome(session: Session, config: Config) {
   const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
   const html: string = `
   <body>
-  <div id="canvas">
-    <div id="emoji1" class="emoji">${randomPatternArr[0]}</div>
-    <div id="emoji3" class="emoji">${randomPatternArr[1]}</div>
-    <div id="emoji4" class="emoji">${randomPatternArr[2]}</div>
-    <div id="emoji2" class="emoji">${randomPatternArr[3]}</div>
-    <div id="mask"></div>
-    <svg>
-      <line x1="${2.55 * blockSize}" y1="${-0.5 * blockSize}"
-        x2="${1.05 * blockSize}" y2="${1.0 * blockSize}"
-        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
-      <circle cx="${1.05 * blockSize}" cy="${1.05 * blockSize}"
-        r="${0.05 * blockSize}" fill="${config.lineColor}" />
-      <line x1="${1.05 * blockSize}" y1="${1.0 * blockSize}"
-        x2="${2.05 * blockSize}" y2="${2.0 * blockSize}" 
-        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
-      <circle cx="${2.05 * blockSize}" cy="${2.05 * blockSize}" 
-        r="${0.05 * blockSize}" fill="${config.lineColor}" />
-      <line x1="${2.05 * blockSize}" y1="${2.0 * blockSize}" 
-        x2="${1.05 * blockSize}" y2="${3.0 * blockSize}" 
-        stroke="${config.blockColor}" stroke-width="${0.1 * blockSize}" />
-    </svg>
-    <svg>
-      <line x1="${2.5 * blockSize}" y1="${-0.5 * blockSize}" 
-        x2="${1.0 * blockSize}" y2="${1.0 * blockSize}" 
-        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
-      <circle cx="${1.0 * blockSize}" 
-        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="${
-    config.lineColor
-  }" />
-      <line x1="${1.0 * blockSize}" y1="${1.0 * blockSize}" 
-        x2="${2.0 * blockSize}" y2="${2.0 * blockSize}" 
-        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
-      <circle cx="${2.0 * blockSize}" cy="${2.0 * blockSize}" 
-        r="${0.05 * blockSize}" fill="${config.lineColor}" />
-      <line x1="${2.0 * blockSize}" y1="${2.0 * blockSize}" 
-        x2="${1.0 * blockSize}" y2="${3.0 * blockSize}" 
-        stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
-    </svg>
-    <div id="boy">🤔</div>
+  <div id="clip">
+    <div id="canvas"></div>
   </div>
+
+  <script>
+    const blockSize = ${blockSize};
+    const table = { "xLength": 6, "yLength": 8, "maxPatternTypes": 9, "pattern": [[], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2/**/, 1/**/, 0, 0, 0], [0, 0, 4, 4, 2, 3/**/, 4/**/, 4, 0, 0], [0, 0, 0, 0, 3, 2/**/, 3, 1, 4, 0], [0, 0,0, 0, 0, 0, 0, 0, 0, 0], []] };
+    const pattern = [""].concat(${JSON.stringify(randomPatternArr)});
+
+    const canvas = document.getElementById("canvas");
+    for (let i = 0; i < table.xLength * table.yLength; i++) {
+      const cell = document.createElement("div");
+      cell.style["grid-row"] = Math.floor(i / table.yLength) + 2;
+      cell.style["grid-column"] = i % table.yLength + 2;
+      canvas.appendChild(cell);
+      cell.classList.add("cell");
+      if (table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1] === 0) continue;
+
+      const block = document.createElement("div");
+      block.id = "block" + i;
+      block.classList.add("block");
+      block.style["color"]= "${config.lineColor}";
+      block.innerText = pattern[table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1]];
+      cell.appendChild(block);
+
+      const number = document.createElement("div");
+      number.classList.add("number");
+      number.innerText = i;
+      block.appendChild(number);
+    }
+  </script>
+
   <style>
-    #canvas {
-      font-size: ${blockSize}px;
+    #clip {
       position: relative;
-      width: ${4 * blockSize}px;
-      height: ${3 * blockSize}px;
+      overflow: hidden;
+      width: ${2.5* blockSize};
+      height: ${2.5* blockSize};
+    }
+
+    #canvas {
+      position: relative;
+      bottom: ${2.71* blockSize};
+      right: ${4.25* blockSize};
+      rotate: 15deg;
+      width: ${9.2 * blockSize}px;
+      height: ${7.2 * blockSize}px;
+      display: grid;
+      grid-template-columns: 0.6fr repeat(8, 1fr) 0.6fr;
+      grid-template-rows: 0.6fr repeat(6, 1fr) 0.6fr;
       background: linear-gradient(to bottom right,
-          ${config.backGroundColorStart},
-          ${config.backGroundColorEnd});
+        ${config.backGroundColorStart},
+        ${config.backGroundColorEnd});
     }
 
-    #boy {
-      position: absolute;
-      top: 35%;
-      left: 40%;
-      rotate: 0.4rad;
-      font-size: 1.5em;
-    }
-
-    div,
-    svg,
-    canvas {
-      position: absolute;
-    }
-
-    #emoji1 {
-      top: 0%;
-      left: 0%;
-      font-size: 1.7em;
-      rotate: -0.4rad;
-    }
-
-    #emoji2 {
-      top: 25%;
-      right: -7%;
-      font-size: 1.2em;
-      rotate: 0.3rad;
-    }
-
-    #emoji3 {
-      bottom: 50%;
-      left: 47%;
-      font-size: 1.3em;
-      rotate: 0.4rad;
-    }
-
-    #emoji4 {
-      bottom: 5%;
-      right: 44%;
-      font-size: 1.5em;
-      rotate: -0.1rad;
-    }
-
-    #mask {
-      position: absolute;
+    .cell {
+      position: relative;
       width: 100%;
       height: 100%;
-      background-color: ${config.lineColor};
-      opacity: 0.4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    svg {
-      width: 100%;
-      height: 100%;
+    .block {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 80%;
+      height: 80%;
+      border-radius: 10%;
+      font-size: ${0.4 * blockSize}px;
+      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${0.05 * blockSize}px;
+      background: ${config.blockColor};
+    }
+
+    .number {
+      position: absolute;
+      bottom: ${0.1 * blockSize}px;
+      left: ${0.12 * blockSize}px;
+      color: ${config.lineColor};
+      font-size: ${0.18 * blockSize}px;
     }
   </style>
 </body>
   `;
   const img = await session.app.puppeteer.render(html, async (page, next) => {
-    const canvas = await page.$("#canvas");
+    const canvas = await page.$("#clip");
     return await next(canvas);
   });
   return img;

@@ -1,0 +1,85 @@
+<body>
+  <div id="clip">
+    <div id="canvas"></div>
+  </div>
+
+  <script>
+    const blockSize = 100;
+    const table = { "xLength": 6, "yLength": 8, "maxPatternTypes": 9, "pattern": [[], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2/**/, 1/**/, 0, 0, 0], [0, 0, 4, 4, 2, 3/**/, 4/**/, 4, 0, 0], [0, 0, 0, 0, 3, 2/**/, 3, 1, 4, 0], [0, 0,0, 0, 0, 0, 0, 0, 0, 0], []] };
+    const pattern = [""].concat(["🌼", "💐", "🥀", "🌹"]);
+
+    const canvas = document.getElementById("canvas");
+    for (let i = 0; i < table.xLength * table.yLength; i++) {
+      const cell = document.createElement("div");
+      cell.style["grid-row"] = Math.floor(i / table.yLength) + 2;
+      cell.style["grid-column"] = i % table.yLength + 2;
+      canvas.appendChild(cell);
+      cell.classList.add("cell");
+      if (table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1] === 0) continue;
+
+      const block = document.createElement("div");
+      block.id = "block" + i;
+      block.classList.add("block");
+      block.innerText = pattern[table.pattern[Math.floor(i / table.yLength) + 1][i % table.yLength + 1]];
+      cell.appendChild(block);
+
+      const number = document.createElement("div");
+      number.classList.add("number");
+      number.innerText = i;
+      block.appendChild(number);
+    }
+  </script>
+
+  <style>
+    #clip {
+      position: relative;
+      overflow: hidden;
+      width: 250;
+      height: 250;
+    }
+
+    #canvas {
+      position: relative;
+      bottom: 271;
+      right: 425;
+      rotate: 15deg;
+      width: 919.9999999999999px;
+      height: 720px;
+      display: grid;
+      grid-template-columns: 0.6fr repeat(8, 1fr) 0.6fr;
+      grid-template-rows: 0.6fr repeat(6, 1fr) 0.6fr;
+      background: linear-gradient(to bottom right,
+          #d3ecd9,
+          #fbdce5);
+    }
+
+    .cell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .block {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 80%;
+      height: 80%;
+      border-radius: 10%;
+      font-size: 40px;
+      box-shadow: #e1b9ff 5px 5px;
+      background: #f8fff4;
+    }
+
+    .number {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      color: #c767ff;
+      font-size: 18px;
+    }
+  </style>
+</body>

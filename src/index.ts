@@ -13,7 +13,9 @@ export * from "./config"
 
 export const usage = `
 ![logo](https://forum.koishi.xyz/uploads/default/original/2X/4/4282105b1260c080c3e3082177dbb860ae982193.jpeg)
+<br>
 可以在koishi上玩连连看~
+<br>
 小心不要沉迷哦...
 `;
 
