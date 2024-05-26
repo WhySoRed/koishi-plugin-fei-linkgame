@@ -14,8 +14,6 @@ export async function draw(
   timeLimit?: number
 ): Promise<string> {
 
-  //console.log("draw", patterns, patternColors, table, linkPathArr, timeLeft, timeLimit);
-
   const blockSize = config.blockSize;
   const pattern = [""].concat(patterns);
 

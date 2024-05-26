@@ -1,22 +1,25 @@
-import { Table, Point } from "./linkGame";
+import { LinkTable, LinkPoint } from "./../linkGameMethods";
 import { Session, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
-import { Config } from "./config";
+import { Config } from "./../config";
 
 export async function draw(
   session: Session,
   config: Config,
   patterns: string[],
   patternColors: string[],
-  table: Table,
-  linkPathArr: Point[][],
-  time?: number,
+  table: LinkTable,
+  linkPathArr: LinkPoint[][],
+  timeLeft?: number,
   timeLimit?: number
-
 ) {
   const blockSize = config.blockSize;
   const width = (table.yLength + 2 - 0.8) * blockSize;
-  const height = (table.xLength + 2 - 0.8) * blockSize;
+  const height = timeLimit
+    ? (table.xLength + 2) * blockSize
+    : (table.xLength + 2 - 0.8) * blockSize;
+  const timeStartColor = config.timeStartColor;
+  const timeEndColor = config.timeEndColor;
   const html = `
 <body>
   <div id="canvas">
@@ -27,6 +30,10 @@ export async function draw(
       const pattern = [""].concat( ${JSON.stringify(patterns)});
       const patternColor = [""].concat( ${JSON.stringify(patternColors)});
       const linkPathArr = ${JSON.stringify(linkPathArr)};
+      const timeLeft = ${timeLeft};
+      const timeLimit = ${timeLimit};
+      const timeStartColor = "${timeStartColor}";
+      const timeEndColor = "${timeEndColor}";
 
       const canvas = document.getElementById("canvas");
       for (let i = 0; i < table.xLength * table.yLength; i++) {
@@ -49,6 +56,18 @@ export async function draw(
         number.innerText = i;
         block.appendChild(number);
       }
+
+      if (timeLimit) {
+        const timeCell = document.createElement("div");
+        timeCell.classList.add("timecell");
+        canvas.appendChild(timeCell);
+        const timeLimitBar = document.createElement("div");
+        timeLimitBar.classList.add("timelimit");
+        timeCell.appendChild(timeLimitBar);
+        const timeLeftBar = document.createElement("div");
+        timeLeftBar.classList.add("timeleft");
+        timeLimitBar.appendChild(timeLeftBar);
+       }
 
       const svg = document.querySelector("svg");
       let shifting = 0;
@@ -94,7 +113,6 @@ export async function draw(
         svg.appendChild(circle);
         shifting += 0.03;
       }
-  
     </script>
   </div>
 
@@ -105,7 +123,7 @@ export async function draw(
       height: ${height}px;
       display: grid;
       grid-template-columns: 0.6fr repeat(${table.yLength}, 1fr) 0.6fr;
-      grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr) 0.6fr;
+      grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr)  ${timeLimit?"0.4fr 1fr":"0.6fr"};
       background: linear-gradient(to bottom right,
           ${config.backGroundColorStart},
           ${config.backGroundColorEnd});
@@ -145,10 +163,33 @@ export async function draw(
       left: ${0.12 * blockSize}px;
       color: ${config.lineColor};
       font-size: ${0.18 * blockSize}px;
+    }
 
+    .timecell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      grid-row: ${table.xLength + 3};
+      grid-column: 2/${table.yLength + 2};
+    }
+
+    .timelimit {
+      background-color: #de3163;
+      width: ${(table.yLength - 0.4) * blockSize}px;
+      height: ${0.2 * blockSize}px;
+    }
+
+    .timeleft {
+      background: linear-gradient(to left,${timeStartColor}, ${timeEndColor});
+      background-clip: content-box;
+      box-sizing: border-box;
+      padding-right: ${(1 - timeLeft / timeLimit) * 100}%;
+      width: 100%;
+      height: 100%;
     }
   </style>
   </body>`;
+  console.log(html);
   const img = await session.app.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
@@ -187,7 +228,9 @@ export async function drawWelcome(session: Session, config: Config) {
         x2="${1.0 * blockSize}" y2="${1.0 * blockSize}" 
         stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />
       <circle cx="${1.0 * blockSize}" 
-        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="${config.lineColor}" />
+        cy="${1.0 * blockSize}" r="${0.05 * blockSize}" fill="${
+    config.lineColor
+  }" />
       <line x1="${1.0 * blockSize}" y1="${1.0 * blockSize}" 
         x2="${2.0 * blockSize}" y2="${2.0 * blockSize}" 
         stroke="${config.lineColor}" stroke-width="${0.1 * blockSize}" />

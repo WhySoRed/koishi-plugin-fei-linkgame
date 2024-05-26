@@ -317,7 +317,7 @@ export async function command(ctx: Context, config: Config) {
     if (config.addSpace) returnMessage += "<message/>";
     const img = await linkGameDraw.over(session, config);
     returnMessage += img;
-    if (linkGame.score !== 0) {
+    if (linkGame?.score) {
       if (config.addSpace) returnMessage += "<message/>";
       const linkGameData = await ctx.database.get("linkGameData", {
         cid: session.cid,
@@ -441,10 +441,10 @@ export async function command(ctx: Context, config: Config) {
     }
 
     if (linkGame.timeLimit) {
-      if (!linkGame.combo) {
+      if (!linkGame?.combo) {
         linkGame.combo = 0;
       }
-      if (!linkGame.score) linkGame.score = 0;
+      if (!linkGame?.score) linkGame.score = 0;
     }
 
     let trueTimes = 0;
@@ -540,17 +540,17 @@ export async function command(ctx: Context, config: Config) {
   }
 
   async function linkGameWIn(session: Session) {
-    let returnMessage;
+    let returnMessage: string = "";
 
     const img = await linkGameDraw.win(session, config);
     returnMessage += img;
 
     if (config.addSpace) returnMessage += "<message/>";
-    returnMessage += "所有的图案都被消除啦~";
+    returnMessage += "所有的图案都被消除啦~\n";
 
     const cid = session.cid;
     const linkGame = linkGameTemp[cid];
-    if (linkGame.score !== 0) {
+    if (linkGame?.score) {
       const linkGameData = await ctx.database.get("linkGameData", {
         cid: session.cid,
       });
