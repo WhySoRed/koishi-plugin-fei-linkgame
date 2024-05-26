@@ -1,4 +1,4 @@
-import { Table, Point } from "../linkGame";
+import { LinkTable, LinkPoint } from "../linkGameMethods";
 import { Session, Random, h } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from "../config";
@@ -8,22 +8,22 @@ export async function draw(
   config: Config,
   patterns: string[],
   patternColors: string[],
-  table: Table,
-  linkPathArr: Point[][],
-  timeLimit?: number,
-  timeLimitMax?: number
+  table: LinkTable,
+  linkPathArr: LinkPoint[][],
+  timeLeft?: number,
+  timeLimit?: number
 ): Promise<string> {
+
+  //console.log("draw", patterns, patternColors, table, linkPathArr, timeLeft, timeLimit);
+
   const blockSize = config.blockSize;
   const pattern = [""].concat(patterns);
-  
+
   const timeStartColor = config.timeStartColor;
   const timeEndColor = config.timeEndColor;
-  
-  timeLimit = 5;
-  timeLimitMax = 10;
 
   const width = (table.yLength + 2 - 0.8) * blockSize;
-  const height = timeLimitMax
+  const height = timeLimit
     ? (table.xLength + 2) * blockSize
     : (table.xLength + 2 - 0.8) * blockSize;
 
@@ -161,7 +161,7 @@ export async function draw(
 
   ctx.translate(0.4 * blockSize, 0.4 * blockSize);
 
-  if (timeLimitMax) {
+  if (timeLimit) {
     const timeWidth = (table.yLength - 0.4) * blockSize;
     const timeHeight = 0.2 * blockSize;
     const timeGradient = ctx.createLinearGradient(0, 0, timeWidth, 0);
@@ -182,7 +182,7 @@ export async function draw(
     ctx.fillRect(
       0.8 * blockSize,
       (table.xLength + 1.4) * blockSize,
-      (timeLimit / timeLimitMax) * timeWidth,
+      (timeLeft / timeLimit) * timeWidth,
       timeHeight
     );
   }

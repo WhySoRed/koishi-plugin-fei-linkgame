@@ -2,6 +2,7 @@ import { Schema } from "koishi";
 
 export interface Config {
   atUser: boolean;
+  addSpace: boolean;
   sideFree: boolean;
   moreSideFree: boolean;
   maxLink: number;
@@ -22,7 +23,8 @@ export interface Config {
 export const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     atUser: Schema.boolean().default(false).description("是否at用户"),
-  }).description("基础设置"),
+    addSpace: Schema.boolean().default(true).description("是否把图案分多次发送"),
+  }).description("消息设置"),
   Schema.object({
     sideFree: Schema.boolean()
       .default(true)
@@ -32,7 +34,7 @@ export const Config: Schema<Config> = Schema.intersect([
       .description("在四周的图案更容易连接"),
     maxLink: Schema.number().default(2).description("最大转折数"),
     timeLimitEachPair: Schema.number()
-      .default(5000)
+      .default(10000)
       .description("限时模式中每对方块的限时(毫秒)"),
     comboTime: Schema.number()
       .default(3000)

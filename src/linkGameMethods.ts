@@ -5,9 +5,9 @@ const IS_EMPTY = 0;
 const IS_VISITED = 1;
 const IS_OTHER_PATTERN = 2;
 const IS_TARGET = 3;
-type PointJudgement = 0 | 1 | 2 | 3;
+type LinkPointJudgement = 0 | 1 | 2 | 3;
 
-export class Point {
+export class LinkPoint {
   x: number;
   y: number;
   constructor(x: number, y: number) {
@@ -18,16 +18,16 @@ export class Point {
 
 // 作为table.checkPath的返回值
 export class PathInfo {
-  p1: Point;
-  p2: Point;
+  p1: LinkPoint;
+  p2: LinkPoint;
   enableLink: boolean;
-  linkPath?: Point[];
+  linkPath?: LinkPoint[];
   text?: string;
   constructor(
-    p1: Point,
-    p2: Point,
+    p1: LinkPoint,
+    p2: LinkPoint,
     enableLink: boolean,
-    linkPath?: Point[],
+    linkPath?: LinkPoint[],
     text?: string
   ) {
     this.p1 = p1;
@@ -37,7 +37,7 @@ export class PathInfo {
     this.text = text;
   }
 }
-class Node extends Point {
+class Node extends LinkPoint {
   level: number = 0;
   parent?: Node;
   constructor(x: number, y: number, level?: number, parent?: Node) {
@@ -48,7 +48,7 @@ class Node extends Point {
 }
 
 // 当前的游戏盘
-export class Table {
+export class LinkTable {
   xLength: number;
   yLength: number;
   maxPatternTypes: number;
@@ -122,13 +122,13 @@ export class Table {
 
   // 打乱重排
   shuffle() {
-    const pointList: Point[] = [];
+    const pointList: LinkPoint[] = [];
     let patternList: number[] = [];
     // 获取当前游戏还有的所有格子和图案，存入数组，再把图案洗牌重新放回
     for (let x = 0; x < this.xLength + 2; x++) {
       for (let y = 0; y < this.yLength + 2; y++) {
         if (this.pattern[x][y]) {
-          pointList.push(new Point(x, y));
+          pointList.push(new LinkPoint(x, y));
           patternList.push(this.pattern[x][y]);
         }
       }
@@ -140,20 +140,20 @@ export class Table {
     }
   }
 
-  remove(p1: Point, p2: Point): void {
+  remove(p1: LinkPoint, p2: LinkPoint): void {
     this.pattern[p1.x][p1.y] = 0;
     this.pattern[p2.x][p2.y] = 0;
   }
 
   // 检查是否存在三条直线可以连接的通路
   /**
-   * 
-   * 
-   * 
-   * 
-   * 
+   *
+   *
+   *
+   *
+   *
    */
-  checkPath(config: Config, p1: Point, p2: Point): PathInfo {
+  checkPath(config: Config, p1: LinkPoint, p2: LinkPoint): PathInfo {
     // 最大折线数
     let maxLevel = config.maxLink;
     if (
@@ -201,7 +201,7 @@ export class Table {
       x: number,
       y: number,
       currentNode: Node
-    ): PointJudgement => {
+    ): LinkPointJudgement => {
       if (this.pattern[x][y] === 0) {
         if (visited[x][y]) return IS_VISITED;
         visited[x][y] = true;
@@ -211,14 +211,14 @@ export class Table {
 
       if (x !== p2.x || y !== p2.y) return IS_OTHER_PATTERN;
 
-      const linkPath: Point[] = [];
+      const linkPath: LinkPoint[] = [];
       let node: Node = currentNode;
       while (node.parent) {
-        linkPath.push(new Point(node.x, node.y));
+        linkPath.push(new LinkPoint(node.x, node.y));
         node = node.parent;
       }
-      linkPath.push(new Point(node.x, node.y));
-      linkPath.reverse().push(new Point(p2.x, p2.y));
+      linkPath.push(new LinkPoint(node.x, node.y));
+      linkPath.reverse().push(new LinkPoint(p2.x, p2.y));
       linkPathInfo = new PathInfo(p1, p2, true, linkPath, "找到通路");
       return IS_TARGET;
     };
@@ -258,7 +258,7 @@ export class Table {
     return linkPathInfo;
   }
 
-  checkPoint(config: Config, p1: Point, p2: Point): PathInfo {
+  checkPoint(config: Config, p1: LinkPoint, p2: LinkPoint): PathInfo {
     if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y))
       return new PathInfo(p1, p2, false, null, "位置不是数字");
     if (p1.x === p2.x && p1.y === p2.y)
@@ -282,10 +282,13 @@ export class Table {
     return this.checkPath(config, p1, p2);
   }
 
-  checkPointArr(config: Config, pointPairArr: [Point, Point][]): PathInfo[] {
+  checkPointArr(
+    config: Config,
+    pointPairArr: [LinkPoint, LinkPoint][]
+  ): PathInfo[] {
     const pathInfoArr: PathInfo[] = [];
     // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
-    const existPointArr: Point[] = [];
+    const existPointArr: LinkPoint[] = [];
     for (let i = 0; i < pointPairArr.length; i++) {
       if (
         existPointArr.find(
@@ -320,14 +323,14 @@ export class Table {
     return pathInfoArr;
   }
 
-  static order2Point(orders: number, table: Table): Point {
-    return new Point(
+  static order2Point(orders: number, table: LinkTable): LinkPoint {
+    return new LinkPoint(
       Math.floor(orders / table.yLength) + 1,
       (orders % table.yLength) + 1
     );
   }
 
-  static point2Order(point: Point, table: Table): number {
+  static point2Order(point: LinkPoint, table: LinkTable): number {
     return (point.x - 1) * table.yLength + point.y - 1;
   }
 }
