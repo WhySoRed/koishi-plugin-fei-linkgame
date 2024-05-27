@@ -1,27 +1,31 @@
-import { LinkTable, LinkPoint } from "../class";
-import { Session, Random } from "koishi";
+import { LinkTable, LinkPoint, LinkGame } from "../class";
+import { Context, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import { Config } from "../../koishiConfig";
 
 export { draw, drawOver, drawWelcome, drawWin };
 
 async function draw(
-  session: Session,
+  ctx: Context,
   config: Config,
-  patterns: string[],
-  patternColors: string[],
-  table: LinkTable,
-  linkPathArr: LinkPoint[][],
-  timeLeft?: number,
-  timeLimit?: number
+  linkGame: LinkGame,
+  linkPathArr?: LinkPoint[][]
 ) {
   const blockSize = config.blockSize;
+  const timeStartColor = config.timeStartColor;
+  const timeEndColor = config.timeEndColor;
+
+  const table = linkGame.table;
+  const patterns = linkGame.patterns;
+  const patternColors = linkGame.patternColors;
+  const timeLeft = linkGame.timeLeft;
+  const timeLimit = linkGame.timeLimit;
+
   const width = (table.yLength + 2 - 0.8) * blockSize;
   const height = timeLimit
     ? (table.xLength + 2) * blockSize
     : (table.xLength + 2 - 0.8) * blockSize;
-  const timeStartColor = config.timeStartColor;
-  const timeEndColor = config.timeEndColor;
+
   const html = `
 <body>
   <div id="canvas">
@@ -195,14 +199,14 @@ async function draw(
     }
   </style>
   </body>`;
-  const img = await session.app.puppeteer.render(html, async (page, next) => {
+  const img = await ctx.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
   });
   return img;
 }
 
-async function drawWelcome(session: Session, config: Config) {
+async function drawWelcome(ctx: Context, config: Config) {
   const blockSize = config.blockSize;
   const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
   const html: string = `
@@ -295,14 +299,14 @@ async function drawWelcome(session: Session, config: Config) {
   </style>
 </body>
   `;
-  const img = await session.app.puppeteer.render(html, async (page, next) => {
+  const img = await ctx.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#clip");
     return await next(canvas);
   });
   return img;
 }
 
-async function drawWin(session: Session, config: Config) {
+async function drawWin(ctx: Context, config: Config) {
   const blockSize = config.blockSize;
   const html: string = `
   <body>
@@ -355,14 +359,14 @@ async function drawWin(session: Session, config: Config) {
 </body>
   `;
 
-  const img = await session.app.puppeteer.render(html, async (page, next) => {
+  const img = await ctx.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
   });
   return img;
 }
 
-async function drawOver(session: Session, config: Config) {
+async function drawOver(ctx: Context, config: Config) {
   const blockSize = config.blockSize;
   const html = `
   <body>
@@ -384,7 +388,7 @@ async function drawOver(session: Session, config: Config) {
   </style>
 </body>
   `;
-  const img = await session.app.puppeteer.render(html, async (page, next) => {
+  const img = await ctx.puppeteer.render(html, async (page, next) => {
     const canvas = await page.$("#canvas");
     return await next(canvas);
   });

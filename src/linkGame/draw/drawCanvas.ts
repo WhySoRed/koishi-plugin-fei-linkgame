@@ -1,38 +1,33 @@
-import { LinkTable, LinkPoint } from "../class";
-import { Session, Random, Context } from "koishi";
+import { LinkPoint, LinkGame } from "../class";
+import { Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from "../../koishiConfig";
 
 export { draw, drawOver, drawWelcome, drawWin };
 
-let ctx: Context;
-
-async function init(appCtx:Context) {
-  ctx = appCtx;
-}
-
 async function draw(
-  session: Session,
+  koishiCtx: Context,
   config: Config,
-  patterns: string[],
-  patternColors: string[],
-  table: LinkTable,
-  linkPathArr: LinkPoint[][],
-  timeLeft?: number,
-  timeLimit?: number
+  linkGame: LinkGame,
+  linkPathArr?: LinkPoint[][],
 ): Promise<string> {
   const blockSize = config.blockSize;
-  const pattern = [""].concat(patterns);
-
   const timeStartColor = config.timeStartColor;
   const timeEndColor = config.timeEndColor;
 
+  const table = linkGame.table;
+  const patterns = linkGame.patterns;
+  const patternColors = linkGame.patternColors;
+  const timeLeft = linkGame.timeLeft;
+  const timeLimit = linkGame.timeLimit;
+
+  const pattern = [""].concat(patterns);
   const width = (table.yLength + 2 - 0.8) * blockSize;
   const height = timeLimit
     ? (table.xLength + 2) * blockSize
     : (table.xLength + 2 - 0.8) * blockSize;
 
-  const patternBlockCanvas = await session.app.canvas.createCanvas(
+  const patternBlockCanvas = await koishiCtx.canvas.createCanvas(
     blockSize,
     blockSize
   );
@@ -77,7 +72,7 @@ async function draw(
   ctxBlock.fill();
   const blockShadow = await patternBlockCanvas.toDataURL("image/png");
 
-  const canvas = await session.app.canvas.createCanvas(width, height);
+  const canvas = await koishiCtx.canvas.createCanvas(width, height);
   const ctx = canvas.getContext("2d");
   const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, config.backGroundColorStart);
@@ -86,8 +81,8 @@ async function draw(
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const patternBlock = await session.app.canvas.loadImage(block);
-  const patternBlockShadow = await session.app.canvas.loadImage(blockShadow);
+  const patternBlock = await koishiCtx.canvas.loadImage(block);
+  const patternBlockShadow = await koishiCtx.canvas.loadImage(blockShadow);
 
   ctx.translate(-0.4 * blockSize, -0.4 * blockSize);
 
@@ -195,9 +190,9 @@ async function draw(
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawWin(session: Session, config: Config) {
+async function drawWin(koishiCtx: Context, config: Config) {
   const blockSize = config.blockSize;
-  const canvas = await session.app.canvas.createCanvas(
+  const canvas = await koishiCtx.canvas.createCanvas(
     4 * blockSize,
     3 * blockSize
   );
@@ -235,7 +230,7 @@ async function drawWin(session: Session, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawWelcome(session: Session, config: Config) {
+async function drawWelcome(koishiCtx: Context, config: Config) {
   const blockSize = config.blockSize;
   const table = {
     xLength: 6,
@@ -260,7 +255,7 @@ async function drawWelcome(session: Session, config: Config) {
   const xShifting = -4.41 * blockSize;
   const yShifting = -2.41 * blockSize;
 
-  const canvas = await session.app.canvas.createCanvas(
+  const canvas = await koishiCtx.canvas.createCanvas(
     2.5 * blockSize,
     2.5 * blockSize
   );
@@ -271,7 +266,7 @@ async function drawWelcome(session: Session, config: Config) {
   ctx.fillStyle = gradient;
   ctx.fillRect(xShifting, yShifting, 9.2 * blockSize, 7.2 * blockSize);
 
-  const patternBlockCanvas = await session.app.canvas.createCanvas(
+  const patternBlockCanvas = await koishiCtx.canvas.createCanvas(
     blockSize,
     blockSize
   );
@@ -316,8 +311,8 @@ async function drawWelcome(session: Session, config: Config) {
   ctxBlock.fill();
   const blockShadow = await patternBlockCanvas.toDataURL("image/png");
 
-  const patternBlock = await session.app.canvas.loadImage(block);
-  const patternBlockShadow = await session.app.canvas.loadImage(blockShadow);
+  const patternBlock = await koishiCtx.canvas.loadImage(block);
+  const patternBlockShadow = await koishiCtx.canvas.loadImage(blockShadow);
 
   ctx.translate(-0.4 * blockSize, -0.4 * blockSize);
 
@@ -367,9 +362,9 @@ async function drawWelcome(session: Session, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawOver(session: Session, config: Config) {
+async function drawOver(koishiCtx: Context, config: Config) {
   const blockSize = config.blockSize;
-  const canvas = await session.app.canvas.createCanvas(
+  const canvas = await koishiCtx.canvas.createCanvas(
     4 * blockSize,
     3 * blockSize
   );

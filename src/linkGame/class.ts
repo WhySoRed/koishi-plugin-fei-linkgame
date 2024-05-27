@@ -18,9 +18,14 @@ class LinkGame {
   combo: number;
   startTime: number;
   timeLimit: number;
+  get timeLeft(): number {
+    return this.timeLimit - (Date.now() - this.startTime);
+  }
+
   timeLimitTimer: () => void;
   score: number;
   lastSession: Session;
+
   clear() {
     this.timeLimitTimer && this.timeLimitTimer();
     this.lastLinkTime = null;

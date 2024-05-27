@@ -1,5 +1,5 @@
-import { Context, Session } from "koishi";
-import { LinkTable, LinkPoint } from "./class";
+import { Context } from "koishi";
+import { LinkPoint, LinkGame } from "./class";
 import { Config } from "./../koishiConfig";
 
 import {
@@ -19,25 +19,37 @@ export class LinkGameDraw {
   pptrOn: boolean;
   ctx: Context;
   game: (
-    session: Session,
     config: Config,
-    patterns: string[],
-    patternColors: string[],
-    table: LinkTable,
-    linkPathArr: LinkPoint[][],
-    timeLeft?: number,
-    timeLimit?: number
+    linkGame: LinkGame,
+    linkPathArr?: LinkPoint[][]
   ) => Promise<string>;
-  win: (session: Session, config: Config) => Promise<string>;
-  welcome: (session: Session, config: Config) => Promise<string>;
-  over: (session: Session, config: Config) => Promise<string>;
+  win: (config: Config) => Promise<string>;
+  welcome: (config: Config) => Promise<string>;
+  over: (config: Config) => Promise<string>;
 
   constructor(ctx: Context) {
     this.ctx = ctx;
     this.pptrOn = ctx.puppeteer ? true : false;
-    this.game = this.pptrOn ? puppeteerDraw : canvasDraw;
-    this.win = this.pptrOn ? puppeteerDrawWin : canvasDrawWin;
-    this.welcome = this.pptrOn ? puppeteerDrawWelcome : canvasDrawWelcome;
-    this.over = this.pptrOn ? puppeteerDrawOver : canvasDrawOver;
+
+    this.game = (...args) => {
+      return this.pptrOn
+        ? puppeteerDraw(ctx, ...args)
+        : canvasDraw(ctx, ...args);
+    };
+    this.win = (...args) => {
+      return this.pptrOn
+        ? puppeteerDrawWin(ctx, ...args)
+        : canvasDrawWin(ctx, ...args);
+    };
+    this.welcome = (...args) => {
+      return this.pptrOn
+        ? puppeteerDrawWelcome(ctx, ...args)
+        : canvasDrawWelcome(ctx, ...args);
+    };
+    this.over = (...args) => {
+      return this.pptrOn
+        ? puppeteerDrawOver(ctx, ...args)
+        : canvasDrawOver(ctx, ...args);
+    };
   }
 }

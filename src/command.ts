@@ -31,7 +31,7 @@ async function command(ctx: Context, config: Config) {
       config.atUser && !session.event.channel.type
         ? h.at(session.userId) + " "
         : "";
-    const img = await linkGameDraw.welcome(session, config);
+    const img = await linkGameDraw.welcome(config);
     const maxScore = (
       await ctx.database.get("linkGameData", {
         cid: session.cid,
@@ -219,18 +219,7 @@ async function command(ctx: Context, config: Config) {
     if (linkGameData.timeLimitOn) {
       linkGameTimeStart(session, linkGame);
     }
-    const timeLeft = linkGame.timeLimit - (Date.now() - linkGame.startTime);
-    const timeLimit = linkGame.timeLimit;
-    const img = await linkGameDraw.game(
-      session,
-      config,
-      linkGame.patterns,
-      linkGame.patternColors,
-      linkGame.table,
-      null,
-      timeLeft,
-      timeLimit
-    );
+    const img = await linkGameDraw.game(config, linkGame);
     returnMessage +=
       `游戏开始咯~\n` +
       `大小${linkGame.table.xLength}x${linkGame.table.yLength} 图案数${linkGame.patterns.length}\n` +
@@ -297,7 +286,7 @@ async function command(ctx: Context, config: Config) {
     linkGame.clear();
     let returnMessage = at + text;
     if (config.addSpace) returnMessage += "<message/>";
-    const img = await linkGameDraw.over(session, config);
+    const img = await linkGameDraw.over(config);
     returnMessage += img;
     if (linkGame?.score) {
       if (config.addSpace) returnMessage += "<message/>";
@@ -323,25 +312,16 @@ async function command(ctx: Context, config: Config) {
     const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
     linkGame.lastSession = session;
     linkGame.combo = 0;
-    const { isPlaying, table, patterns, patternColors } = linkGame;
+    const { isPlaying, table } = linkGame;
 
     if (!isPlaying) {
       returnMessage += "游戏还没开始呢";
       return returnMessage;
     }
     table.shuffle();
-    const timeLeft = linkGame.timeLimit - (Date.now() - linkGame.startTime);
+    const timeLeft = linkGame.timeLeft;
     const timeLimit = linkGame.timeLimit;
-    const img = await linkGameDraw.game(
-      session,
-      config,
-      patterns,
-      patternColors,
-      table,
-      null,
-      timeLeft,
-      timeLimit
-    );
+    const img = await linkGameDraw.game(config, linkGame);
     returnMessage += "已经重新打乱顺序了~";
     if (config.addSpace) returnMessage += "<message/>";
     returnMessage += img;
@@ -399,12 +379,9 @@ async function command(ctx: Context, config: Config) {
     const linkGame =
       linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
     linkGame.lastSession = session;
-    const { table, patterns, patternColors } = linkGame;
+    const { table } = linkGame;
 
     let addScore = 0;
-
-    const timeLeft = linkGame.timeLimit - (Date.now() - linkGame.startTime);
-    const timeLimit = linkGame.timeLimit;
 
     const pathInfoArr = table.checkPointArr(config, pointPairArr);
     let truePathInfoArr = pathInfoArr.filter(
@@ -439,16 +416,7 @@ async function command(ctx: Context, config: Config) {
       const linkPathArr = truePathInfoArr.map(
         (info: LinkPathInfo) => info.linkPath
       );
-      const img = await linkGameDraw.game(
-        session,
-        config,
-        patterns,
-        patternColors,
-        table,
-        linkPathArr,
-        timeLeft,
-        timeLimit
-      );
+      const img = await linkGameDraw.game(config, linkGame, linkPathArr);
       returnMessage += img;
       if (config.addSpace) returnMessage += "<message/>";
       for (const [p1, p2] of removeArr) {
@@ -480,16 +448,7 @@ async function command(ctx: Context, config: Config) {
     if (table.isClear) {
       returnMessage += await linkGameWIn(session);
     } else {
-      const resultImg = await linkGameDraw.game(
-        session,
-        config,
-        patterns,
-        patternColors,
-        table,
-        null,
-        timeLeft,
-        timeLimit
-      );
+      const resultImg = await linkGameDraw.game(config, linkGame);
       returnMessage += resultImg;
       if (config.addSpace) returnMessage += "<message/>";
       if (linkGame.combo > 1) {
@@ -524,7 +483,7 @@ async function command(ctx: Context, config: Config) {
   async function linkGameWIn(session: Session) {
     let returnMessage: string = "";
 
-    const img = await linkGameDraw.win(session, config);
+    const img = await linkGameDraw.win(config);
     returnMessage += img;
 
     if (config.addSpace) returnMessage += "<message/>";
