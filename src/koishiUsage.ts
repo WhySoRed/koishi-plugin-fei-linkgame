@@ -1,5 +1,5 @@
 import { Random } from "koishi";
-import { Config } from "./config";
+import { Config } from "./koishiConfig";
 
 export let usage = `
 

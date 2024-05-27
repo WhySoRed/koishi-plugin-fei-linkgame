@@ -1,5 +1,7 @@
-import { Random } from "koishi";
-import { Config } from "./config";
+import { Random, Session } from "koishi";
+import { Config } from "../koishiConfig";
+
+export { LinkGame, LinkPoint, LinkTable, LinkPathInfo}
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -7,7 +9,29 @@ const IS_OTHER_PATTERN = 2;
 const IS_TARGET = 3;
 type LinkPointJudgement = 0 | 1 | 2 | 3;
 
-export class LinkPoint {
+class LinkGame {
+  isPlaying: boolean = false;
+  patterns: string[];
+  patternColors: string[];
+  table: LinkTable;
+  lastLinkTime: number;
+  combo: number;
+  startTime: number;
+  timeLimit: number;
+  timeLimitTimer: () => void;
+  score: number;
+  lastSession: Session;
+  clear() {
+    this.timeLimitTimer && this.timeLimitTimer();
+    this.lastLinkTime = null;
+    this.isPlaying = false;
+    this.score = 0;
+    this.combo = 0;
+    this.timeLimit = null;
+  }
+}
+
+ class LinkPoint {
   x: number;
   y: number;
   constructor(x: number, y: number) {
@@ -17,7 +41,7 @@ export class LinkPoint {
 }
 
 // 作为table.checkPath的返回值
-export class LinkPathInfo {
+ class LinkPathInfo {
   p1: LinkPoint;
   p2: LinkPoint;
   enableLink: boolean;
@@ -48,7 +72,7 @@ class Node extends LinkPoint {
 }
 
 // 当前的游戏盘
-export class LinkTable {
+ class LinkTable {
   xLength: number;
   yLength: number;
   maxPatternTypes: number;

@@ -1,7 +1,7 @@
 import { Context } from "koishi";
-import { Config } from "./config";
-import { extendDatabase } from "./database";
-import { updateUsage } from "./usage";
+import { Config } from "./koishiConfig";
+import { extendDatabase } from "./koishiDatabase";
+import { updateUsage } from "./koishiUsage";
 import { command, linkGameTemp } from "./command";
 import {} from "@koishijs/plugin-help";
 
@@ -11,8 +11,8 @@ export const inject = {
 };
 
 export const name = "fei-linkgame";
-export * from "./config";
-export * from "./usage";
+export * from "./koishiConfig";
+export * from "./koishiUsage";
 
 export function apply(ctx: Context, config: Config) {
   ctx.on("ready", async () => {

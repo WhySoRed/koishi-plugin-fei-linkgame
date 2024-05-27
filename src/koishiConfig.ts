@@ -1,6 +1,8 @@
 import { Schema } from "koishi";
+export { Config } 
 
-export interface Config {
+
+interface Config {
   atUser: boolean;
   addSpace: boolean;
   sideFree: boolean;
@@ -20,7 +22,7 @@ export interface Config {
   pattermType?: string[];
 }
 
-export const Config: Schema<Config> = Schema.intersect([
+const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     atUser: Schema.boolean().default(false).description("是否at用户"),
     addSpace: Schema.boolean().default(true).description("是否把图案分多次发送"),

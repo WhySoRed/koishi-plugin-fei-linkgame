@@ -1,9 +1,11 @@
-import { LinkTable, LinkPoint } from "./../linkGameMethods";
+import { LinkTable, LinkPoint } from "../class";
 import { Session, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
-import { Config } from "./../config";
+import { Config } from "../../koishiConfig";
 
-export async function draw(
+export { draw, drawOver, drawWelcome, drawWin };
+
+async function draw(
   session: Session,
   config: Config,
   patterns: string[],
@@ -123,7 +125,9 @@ export async function draw(
       height: ${height}px;
       display: grid;
       grid-template-columns: 0.6fr repeat(${table.yLength}, 1fr) 0.6fr;
-      grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr)  ${timeLimit?"0.4fr 1fr":"0.6fr"};
+      grid-template-rows: 0.6fr repeat(${table.xLength}, 1fr)  ${
+    timeLimit ? "0.4fr 1fr" : "0.6fr"
+  };
       background: linear-gradient(to bottom right,
           ${config.backGroundColorStart},
           ${config.backGroundColorEnd});
@@ -153,7 +157,9 @@ export async function draw(
       height: 80%;
       border-radius: 10%;
       font-size: ${0.4 * blockSize}px;
-      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${0.05 * blockSize}px;
+      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${
+    0.05 * blockSize
+  }px;
       background: ${config.blockColor};
     }
 
@@ -196,7 +202,7 @@ export async function draw(
   return img;
 }
 
-export async function drawWelcome(session: Session, config: Config) {
+async function drawWelcome(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
   const html: string = `
@@ -237,14 +243,14 @@ export async function drawWelcome(session: Session, config: Config) {
     #clip {
       position: relative;
       overflow: hidden;
-      width: ${2.5* blockSize};
-      height: ${2.5* blockSize};
+      width: ${2.5 * blockSize};
+      height: ${2.5 * blockSize};
     }
 
     #canvas {
       position: relative;
-      bottom: ${2.71* blockSize};
-      right: ${4.25* blockSize};
+      bottom: ${2.71 * blockSize};
+      right: ${4.25 * blockSize};
       rotate: 15deg;
       width: ${9.2 * blockSize}px;
       height: ${7.2 * blockSize}px;
@@ -273,7 +279,9 @@ export async function drawWelcome(session: Session, config: Config) {
       height: 80%;
       border-radius: 10%;
       font-size: ${0.4 * blockSize}px;
-      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${0.05 * blockSize}px;
+      box-shadow: ${config.blockShadowColor} ${0.05 * blockSize}px ${
+    0.05 * blockSize
+  }px;
       background: ${config.blockColor};
     }
 
@@ -294,7 +302,7 @@ export async function drawWelcome(session: Session, config: Config) {
   return img;
 }
 
-export async function drawWin(session: Session, config: Config) {
+async function drawWin(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const html: string = `
   <body>
@@ -354,7 +362,7 @@ export async function drawWin(session: Session, config: Config) {
   return img;
 }
 
-export async function drawOver(session: Session, config: Config) {
+async function drawOver(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const html = `
   <body>

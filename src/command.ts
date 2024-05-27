@@ -1,38 +1,17 @@
 import { Context, Random, Session, h } from "koishi";
-import { Config } from "./config";
-
-import { LinkTable, LinkPoint, LinkPathInfo } from "./linkGameMethods";
-import { LinkGameDraw } from "./draw";
-
+import { Config } from "./koishiConfig";
+import { LinkTable, LinkPoint, LinkPathInfo, LinkGame } from "./linkGame/class";
+import { LinkGameDraw } from "./linkGame/draw";
 import {} from "koishi-plugin-puppeteer";
-export class LinkGame {
-  isPlaying: boolean = false;
-  patterns: string[];
-  patternColors: string[];
-  table: LinkTable;
-  lastLinkTime: number;
-  combo: number;
-  startTime: number;
-  timeLimit: number;
-  timeLimitTimer: () => void;
-  score: number;
-  lastSession: Session;
-  clear() {
-    this.timeLimitTimer && this.timeLimitTimer();
-    this.lastLinkTime = null;
-    this.isPlaying = false;
-    this.score = 0;
-    this.combo = 0;
-    this.timeLimit = null;
-  }
-}
 
-export const linkGameTemp = {
+export { linkGameTemp, command };
+
+const linkGameTemp = {
   data: {} as { [key: string]: LinkGame },
   clear(cid: string) {
     const linkGame = linkGameTemp[cid];
     if (!linkGame) return;
-    linkGame.clear&&linkGame.clear();
+    linkGame.clear && linkGame.clear();
     delete linkGameTemp[cid];
   },
 
@@ -44,7 +23,7 @@ export const linkGameTemp = {
   },
 };
 
-export async function command(ctx: Context, config: Config) {
+async function command(ctx: Context, config: Config) {
   const linkGameDraw = new LinkGameDraw(ctx);
 
   ctx.command("连连看").action(async ({ session }) => {

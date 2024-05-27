@@ -1,9 +1,17 @@
-import { LinkTable, LinkPoint } from "../linkGameMethods";
-import { Session, Random, h } from "koishi";
+import { LinkTable, LinkPoint } from "../class";
+import { Session, Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
-import { Config } from "../config";
+import { Config } from "../../koishiConfig";
 
-export async function draw(
+export { draw, drawOver, drawWelcome, drawWin };
+
+let ctx: Context;
+
+async function init(appCtx:Context) {
+  ctx = appCtx;
+}
+
+async function draw(
   session: Session,
   config: Config,
   patterns: string[],
@@ -187,7 +195,7 @@ export async function draw(
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-export async function drawWin(session: Session, config: Config) {
+async function drawWin(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const canvas = await session.app.canvas.createCanvas(
     4 * blockSize,
@@ -227,7 +235,7 @@ export async function drawWin(session: Session, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-export async function drawWelcome(session: Session, config: Config) {
+async function drawWelcome(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const table = {
     xLength: 6,
@@ -359,7 +367,7 @@ export async function drawWelcome(session: Session, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-export async function drawOver(session: Session, config: Config) {
+async function drawOver(session: Session, config: Config) {
   const blockSize = config.blockSize;
   const canvas = await session.app.canvas.createCanvas(
     4 * blockSize,

@@ -1,6 +1,6 @@
 import { Context, Session } from "koishi";
-import { LinkTable, LinkPoint } from "./linkGameMethods";
-import { Config } from "./config";
+import { LinkTable, LinkPoint } from "./class";
+import { Config } from "./../koishiConfig";
 
 import {
   draw as canvasDraw,
@@ -17,6 +17,7 @@ import {
 
 export class LinkGameDraw {
   pptrOn: boolean;
+  ctx: Context;
   game: (
     session: Session,
     config: Config,
@@ -32,6 +33,7 @@ export class LinkGameDraw {
   over: (session: Session, config: Config) => Promise<string>;
 
   constructor(ctx: Context) {
+    this.ctx = ctx;
     this.pptrOn = ctx.puppeteer ? true : false;
     this.game = this.pptrOn ? puppeteerDraw : canvasDraw;
     this.win = this.pptrOn ? puppeteerDrawWin : canvasDrawWin;
