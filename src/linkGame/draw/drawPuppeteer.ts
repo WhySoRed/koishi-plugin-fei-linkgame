@@ -217,7 +217,7 @@ async function drawWelcome(ctx: Context, config: Config) {
 
   <script>
     const blockSize = ${blockSize};
-    const table = { "xLength": 6, "yLength": 8, "maxPatternTypes": 9, "pattern": [[], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2/**/, 1/**/, 0, 0, 0], [0, 0, 4, 4, 2, 3/**/, 4/**/, 4, 0, 0], [0, 0, 0, 0, 3, 2/**/, 3, 1, 4, 0], [0, 0,0, 0, 0, 0, 0, 0, 0, 0], []] };
+    const table = { "xLength": 6, "yLength": 8, "patternCounts": 9, "pattern": [[], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 2, 2/**/, 1/**/, 0, 0, 0], [0, 0, 4, 4, 2, 3/**/, 4/**/, 4, 0, 0], [0, 0, 0, 0, 3, 2/**/, 3, 1, 4, 0], [0, 0,0, 0, 0, 0, 0, 0, 0, 0], []] };
     const pattern = [""].concat(${JSON.stringify(randomPatternArr)});
 
     const canvas = document.getElementById("canvas");

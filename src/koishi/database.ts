@@ -10,7 +10,7 @@ export interface LinkGameData {
   cid: string;
   xLength: number;
   yLength: number;
-  maxPatternTypes: number;
+  patternCounts: number;
   timeLimitOn: boolean;
   maxScore: number;
 }
@@ -22,7 +22,7 @@ export async function extendDatabase(ctx: Context) {
       cid: "string",
       xLength: "unsigned",
       yLength: "unsigned",
-      maxPatternTypes: "unsigned",
+      patternCounts: "unsigned",
       timeLimitOn: "boolean",
       maxScore: "unsigned",
     },

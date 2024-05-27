@@ -8,6 +8,7 @@ import {
   LinkGameData,
 } from "./linkGame/class";
 import { LinkGameDraw } from "./linkGame/draw";
+import { showSetting, settingChange } from "./linkGame/setting";
 
 export { linkGameTemp, command };
 
@@ -19,7 +20,7 @@ const linkGameTemp = {
   list: {} as LinkGameList,
 
   create(cid: string) {
-    const linkGame = new LinkGame();
+    const linkGame = new LinkGame(cid);
     this.list[cid] = linkGame;
     return linkGame;
   },
@@ -28,6 +29,10 @@ const linkGameTemp = {
     const linkGame = this.list[cid];
     if (!linkGame) return this.create(cid);
     return linkGame;
+  },
+
+  get(cid: string) {
+    return this.list[cid];
   },
 
   clear(cid: string) {
@@ -80,99 +85,35 @@ async function command(ctx: Context, config: Config) {
       `连连看.连`;
 
     if (maxScore) {
-      returnMessage += `\n\n` + `本群目前最高分：${maxScore}~`;
+      returnMessage += `\n\n` + `本对话目前最高分：${maxScore}~`;
     }
     return returnMessage;
   });
 
-  ctx.command("连连看.设置").action(async ({ session, args }) => {
-    const cid = session.cid;
-    const linkGameData = await LinkGameData.getorCreate(ctx, cid);
-    const xLength = linkGameData.xLength;
-    const yLength = linkGameData.yLength;
-    const maxPatternTypes = linkGameData.maxPatternTypes;
-    // TODO: 把这个用图片输出
-    return (
-      addAt(session) +
-      `当前设置：\n` +
-      `每列图案个数：${xLength}\n` +
-      `每行图案个数：${yLength}\n` +
-      `当前图案库存数：${config.pattermType.length}\n` +
-      `是否开启限时模式：${linkGameData.timeLimitOn ? "是" : "否"}\n` +
-      `当前每局图案最大数量：${maxPatternTypes}\n\n` +
-      `查看设置指令请发送\n` +
-      `help 连连看.设置`
-    );
+  ctx.command("连连看.设置").action(async ({ session }) => {
+    return addAt(session) + (await showSetting(session));
   });
 
   ctx.command("连连看.设置.尺寸").action(async ({ session, args }) => {
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
-    if (linkGame.isPlaying) return addAt(session) + " 游戏中不可以更改设置哦";
-    if (args.length !== 2) return addAt(session) + "参数数量错误";
-    const xLength = Math.floor(+args[0]);
-    const yLength = Math.floor(+args[1]);
-    if (isNaN(xLength) || isNaN(yLength)) return addAt(session) + "参数错误";
-    if (xLength < 2 || yLength < 2) return addAt(session) + "参数错误";
-    if ((xLength * yLength) % 2 !== 0)
-      return addAt(session) + "格子总数要是偶数个才行..";
-
-    const linkGameData = await LinkGameData.getorCreate(ctx, cid);
-    linkGameData.xLength = xLength;
-    linkGameData.yLength = yLength;
-    await LinkGameData.update(ctx, linkGameData);
-    
-    return addAt(session) + "设置更改成功~";
+    return addAt(session) + (await settingChange(session, "尺寸", ...args));
   });
 
   ctx.command("连连看.设置.图案数").action(async ({ session, args }) => {
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
-    if (linkGame.isPlaying) return addAt(session) + " 游戏中不可以更改设置哦";
-    const linkGameData = await LinkGameData.getorCreate(ctx, cid);
-    if (args.length !== 1) return addAt(session) + "参数数量错误";
-    const maxPatternTypes = Math.floor(+args[0]);
-    if (isNaN(maxPatternTypes)) return addAt(session) + "参数错误";
-    if (maxPatternTypes > config.pattermType.length)
-      return addAt(session) + "我准备的图案没有那么多呀...";
-    if (maxPatternTypes < 1)
-      return addAt(session) + "额...起码得有一种图案吧...";
-    
-    linkGameData.maxPatternTypes = maxPatternTypes;
-    await LinkGameData.update(ctx, linkGameData);
-    return addAt(session) + "设置更改成功~";
+    return addAt(session) + (await settingChange(session, "图案数", ...args));
+  });
+  ctx.command("连连看.设置.限时").action(async ({ session }) => {
+    return addAt(session) + (await settingChange(session, "限时"));
   });
 
-  ctx.command("连连看.设置.限时").action(async ({ session, args }) => {
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
-    if (linkGame.isPlaying) return addAt(session) + " 游戏中不可以更改设置哦";
-    const linkGameData = await LinkGameData.getorCreate(ctx, cid);
-    linkGameData.timeLimitOn = !linkGameData.timeLimitOn;
-    await LinkGameData.update(ctx, linkGameData);
-    if (linkGameData.timeLimitOn) {
-      return addAt(session) + "禅模式关闭~\n限时但是会计算分数哦";
-    } else {
-      linkGame.startTime = null;
-      linkGame.timeLimit = null;
-      return addAt(session) + "禅模式关闭~\n不限时但是不会计算分数哦";
-    }
-  });
-  ctx.command("连连看.设置.重置").action(async ({ session, args }) => {
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
-    if (linkGame.isPlaying) return addAt(session) + " 游戏中不可以更改设置哦";
-    const linkGameData = new LinkGameData(cid);
-    await LinkGameData.update(ctx, linkGameData);
-    return addAt(session) + "重置成功~";
+  ctx.command("连连看.设置.重置").action(async ({ session }) => {
+    return addAt(session) + (await settingChange(session, "重置"));
   });
 
   ctx.command("连连看.开始").action(async ({ session }) => {
     const cid = session.cid;
     let returnMessage = addAt(session);
 
-    const linkGame =
-      linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
+    const linkGame = linkGameTemp.getorCreate(cid);
 
     if (linkGame.isPlaying) {
       returnMessage += "游戏已经开始了";
@@ -183,22 +124,11 @@ async function command(ctx: Context, config: Config) {
 
     const xLength = linkGameData.xLength;
     const yLength = linkGameData.yLength;
-    const maxPatternTypes = linkGameData.maxPatternTypes;
-    if (maxPatternTypes > config.pattermType.length) {
+    const patternCounts = linkGameData.patternCounts;
+    if (patternCounts > config.pattermType.length) {
       returnMessage += "现在图案种类比库存多...请更改设置";
       return returnMessage;
     }
-
-    linkGame.isPlaying = true;
-    const random = new Random();
-    linkGame.patterns = random
-      .shuffle(config.pattermType)
-      .slice(0, maxPatternTypes);
-    linkGame.patternColors = [];
-    for (let i = 0; i < maxPatternTypes; i++) {
-      linkGame.patternColors.push(config.lineColor);
-    }
-    linkGame.table = new LinkTable(xLength, yLength, maxPatternTypes);
 
     if (linkGameData.timeLimitOn) {
       linkGameTimeStart(session, linkGame);
@@ -247,8 +177,8 @@ async function command(ctx: Context, config: Config) {
   }
 
   ctx.command("连连看.结束").action(async ({ session }) => {
-    const linkGame =
-      linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
+    const cid = session.cid;
+    const linkGame = linkGameTemp.getorCreate(cid);
     if (!linkGame.isPlaying) return addAt(session) + "游戏还没开始呢";
     return await linkGameOver(session, linkGame, "游戏自我了断了...");
   });
@@ -283,7 +213,7 @@ async function command(ctx: Context, config: Config) {
   ctx.command("连连看.重排").action(async ({ session }) => {
     let returnMessage = addAt(session);
     const cid = session.cid;
-    const linkGame = linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
+    const linkGame = linkGameTemp.getorCreate(cid);
     linkGame.lastSession = session;
     linkGame.combo = 0;
     const { isPlaying, table } = linkGame;
@@ -308,8 +238,7 @@ async function command(ctx: Context, config: Config) {
     .action(async ({ session, args }) => {
       let returnMessage = addAt(session);
       const cid = session.cid;
-      const { isPlaying, table } =
-        linkGameTemp[cid] || (linkGameTemp[cid] = new LinkGame());
+      const { isPlaying, table } = linkGameTemp.getorCreate(cid);
       if (!isPlaying) return;
 
       if (args.length % 2 !== 0) {
@@ -342,8 +271,8 @@ async function command(ctx: Context, config: Config) {
     pointPairArr: [LinkPoint, LinkPoint][]
   ) {
     let returnMessage = addAt(session);
-    const linkGame =
-      linkGameTemp[session.cid] || (linkGameTemp[session.cid] = new LinkGame());
+    const cid = session.cid;
+    const linkGame = linkGameTemp.getorCreate(cid);
     linkGame.lastSession = session;
     const { table } = linkGame;
 

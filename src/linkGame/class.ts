@@ -10,7 +10,8 @@ const IS_TARGET = 3;
 type LinkPointJudgement = 0 | 1 | 2 | 3;
 
 class LinkGame {
-  isPlaying: boolean = false;
+  cid:string;
+  isPlaying: boolean;
   patterns: string[];
   patternColors: string[];
   table: LinkTable;
@@ -24,6 +25,13 @@ class LinkGame {
   score: number;
   lastSession: Session;
   timeLimitTimer: () => void;
+
+  constructor(cid: string) {
+    this.cid = cid;
+    this.isPlaying = false;
+  }
+
+  newGame(linkGameData: LinkGameData, config: Config) {}
 
   clear() {
     this.isPlaying = false;
@@ -44,14 +52,14 @@ class LinkGameData {
   cid: string;
   xLength: number;
   yLength: number;
-  maxPatternTypes: number;
+  patternCounts: number;
   timeLimitOn: boolean;
   maxScore: number;
   constructor(cid: string) {
     this.cid = cid;
     this.xLength = 5;
     this.yLength = 6;
-    this.maxPatternTypes = 9;
+    this.patternCounts = 9;
     this.timeLimitOn = true;
     this.maxScore = 0;
   }
@@ -115,7 +123,7 @@ class Node extends LinkPoint {
 class LinkTable {
   xLength: number;
   yLength: number;
-  maxPatternTypes: number;
+  patternCounts: number;
   pattern: number[][];
   get isClear(): boolean {
     for (let x = 0; x < this.xLength + 1; x++) {
@@ -126,11 +134,11 @@ class LinkTable {
     return true;
   }
 
-  constructor(xLength: number, yLength: number, maxPatternTypes: number) {
+  constructor(xLength: number, yLength: number, patternCounts: number) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
-    this.maxPatternTypes = maxPatternTypes;
+    this.patternCounts = patternCounts;
     this.pattern = this.init();
   }
 
@@ -154,11 +162,11 @@ class LinkTable {
 
     let patternList: number[] = [];
     // 1
-    let patternCreateArr = randomPatternArr(this.maxPatternTypes);
+    let patternCreateArr = randomPatternArr(this.patternCounts);
     for (let i = 0; i < (this.xLength * this.yLength) / 2; i++) {
       if (patternCreateArr.length === 0) {
         // 3
-        patternCreateArr = randomPatternArr(this.maxPatternTypes);
+        patternCreateArr = randomPatternArr(this.patternCounts);
       }
       const pattern = patternCreateArr.pop();
       patternList.push(pattern);
@@ -211,10 +219,6 @@ class LinkTable {
 
   // 检查是否存在三条直线可以连接的通路
   /**
-   *
-   *
-   *
-   *
    *
    */
   checkPath(config: Config, p1: LinkPoint, p2: LinkPoint): LinkPathInfo {

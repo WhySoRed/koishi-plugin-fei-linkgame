@@ -235,7 +235,7 @@ async function drawWelcome(koishiCtx: Context, config: Config) {
   const table = {
     xLength: 6,
     yLength: 8,
-    maxPatternTypes: 9,
+    patternCounts: 9,
     pattern: [
       [],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
