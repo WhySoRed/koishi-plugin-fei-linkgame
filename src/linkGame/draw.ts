@@ -1,6 +1,6 @@
 import { Context } from "koishi";
 import { LinkGame } from "./linkGameMethod";
-import { LinkPoint, LinkTable } from "./table";
+import { LinkPoint, LinkTable } from "./linkTable";
 import { Config } from "../koishi/config";
 
 import {

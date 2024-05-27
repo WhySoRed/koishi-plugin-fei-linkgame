@@ -1,5 +1,5 @@
 import { LinkGame } from "../linkGameMethod";
-import { LinkPoint,LinkTable } from "../table";
+import { LinkPoint,LinkTable } from "../linkTable";
 import { Context, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import { Config } from "../../koishi/config";

@@ -1,5 +1,5 @@
 import { LinkGame } from "../linkGameMethod";
-import { LinkPoint, LinkTable } from "../table";
+import { LinkPoint, LinkTable } from "../linkTable";
 import { Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from "../../koishi/config";

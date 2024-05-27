@@ -1,16 +1,16 @@
 import { Context, Random, Session } from "koishi";
 import { Config } from "../koishi/config";
 import { LinkGameDraw } from "./draw";
-import { LinkTable } from "./table";
+import { LinkTable } from "./linkTable";
 
-export { LinkGame, LinkGameData };
+export { LinkGame, LinkGameSetting };
 
-type Setting = LinkGameData;
 class LinkGame {
   cid: string;
   ctx: Context;
   config: Config;
-  setting: Setting;
+  setting: LinkGameSetting;
+  data: LinkGameData;
   addMsgBreak: string;
   draw: LinkGameDraw;
   isPlaying: boolean;
@@ -38,13 +38,13 @@ class LinkGame {
   }
 
   async settingChange(ctx: Context) {
-    this.setting = await LinkGameData.getorCreate(ctx, this.cid);
+    this.setting = await LinkGameSetting.getorCreate(ctx, this.cid);
   }
 
   async welcome() {
     this.settingChange(this.ctx);
     const img = await this.draw.welcome();
-    const maxScore = this.setting.maxScore;
+    const maxScore = this.data.maxScore;
     let returnMessage =
       img +
       `一起来玩...\n` +
@@ -64,7 +64,7 @@ class LinkGame {
   async newGame(session: Session) {
     this.ctx = session.app;
     this.config = this.ctx.config;
-    this.setting = await LinkGameData.getorCreate(session.app, this.cid);
+    this.setting = await LinkGameSetting.getorCreate(session.app, this.cid);
 
     this.lastSession = session;
     const patternCounts = this.setting.patternCounts;
@@ -161,7 +161,7 @@ class LinkGame {
 
   async scoreRecord() {
     if (!this.score) return "";
-    const linkGameData = this.setting;
+    const linkGameData = this.data;
     if (linkGameData[0].maxScore < this.score) {
       linkGameData.maxScore = this.score;
       await LinkGameData.update(this.ctx, linkGameData);
@@ -193,19 +193,39 @@ class LinkGame {
   }
 }
 
-class LinkGameData {
+class LinkGameSetting {
   cid: string;
   xLength: number;
   yLength: number;
   patternCounts: number;
   timeLimitOn: boolean;
-  maxScore: number;
   constructor(cid: string) {
     this.cid = cid;
     this.xLength = 5;
     this.yLength = 6;
     this.patternCounts = 9;
     this.timeLimitOn = true;
+  }
+  // 获取数据库数据，没有则创建
+  static async getorCreate(ctx: Context, cid: string) {
+    const linkGameSetting = (await ctx.database.get("linkGameSetting", { cid }))[0];
+    if (!linkGameSetting) {
+      const linkGameSetting = new LinkGameSetting(cid);
+      await ctx.database.create("linkGameSetting", linkGameSetting);
+      return linkGameSetting;
+    } else return linkGameSetting;
+  }
+  static async update(ctx: Context, linkGameSetting: LinkGameSetting) {
+    await ctx.database.upsert("linkGameSetting", [linkGameSetting]);
+    return linkGameSetting;
+  }
+}
+
+class LinkGameData {
+  cid: string;
+  maxScore: number;
+  constructor(cid: string) {
+    this.cid = cid;
     this.maxScore = 0;
   }
   // 获取数据库数据，没有则创建

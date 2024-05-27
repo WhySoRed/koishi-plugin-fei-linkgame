@@ -1,8 +1,7 @@
 import { Context, Session, h } from "koishi";
 import { Config } from "./koishi/config";
-import { LinkGame, LinkGameData } from "./linkGame/linkGameMethod";
-import { LinkPoint, LinkPathInfo, LinkTable } from "./linkGame/table";
-import { LinkGameDraw } from "./linkGame/draw";
+import { LinkGame } from "./linkGame/linkGameMethod";
+import { LinkPoint, LinkPathInfo, LinkTable } from "./linkGame/linkTable";
 import { showSetting, settingChange } from "./linkGame/setting";
 
 export { linkGameTemp, command };
@@ -49,8 +48,6 @@ const linkGameTemp = {
 };
 
 async function command(ctx: Context, config: Config) {
-  const linkGameDraw = new LinkGameDraw(ctx);
-
   // 根据设置确定是否需要添加at
   function addAt(session: Session) {
     if (config.atUser && !session.event.channel.type) {
@@ -108,37 +105,42 @@ async function command(ctx: Context, config: Config) {
     .command("连连看.连")
     .alias("连")
     .action(async ({ session, args }) => {
-      let returnMessage = addAt(session);
-      const cid = session.cid;
-      const { isPlaying, table } = linkGameTemp.getorCreate(session);
-      if (!isPlaying) return;
-
-      if (args.length % 2 !== 0) {
-        returnMessage += "参数数量有问题呀";
-        returnMessage += addMsgBreak();
-        args.pop();
-      }
-
-      // 这部分用于把传入的数对拆分
-      const pointArr = [...args];
-      const pointPairArr: [LinkPoint, LinkPoint][] = [];
-      while (pointArr.length > 1) {
-        const p1: LinkPoint = LinkTable.order2Point(
-          Math.floor(+pointArr.shift()),
-          table
-        );
-        const p2: LinkPoint = LinkTable.order2Point(
-          Math.floor(+pointArr.shift()),
-          table
-        );
-        pointPairArr.push([p1, p2]);
-      }
-      returnMessage += await checkLickGame(session, pointPairArr);
-
-      return returnMessage;
+      const linkResult = await linkGameLink(session, args);
+      if (linkResult === "") return "";
+      else return addAt(session) + (await linkGameLink(session, args));
     });
 
-  async function checkLickGame(
+  async function linkGameLink(session: Session, args: string[]) {
+    let returnMessage = "";
+    const linkGame = linkGameTemp.getorCreate(session);
+    if(!linkGame.isPlaying) return "";
+
+    if (args.length % 2 !== 0) {
+      returnMessage += "参数数量有问题呀";
+      returnMessage += addMsgBreak();
+      args.pop();
+    }
+
+    // 这部分用于把传入的数对拆分
+    const pointArr = [...args];
+    const pointPairArr: [LinkPoint, LinkPoint][] = [];
+    while (pointArr.length > 1) {
+      const p1: LinkPoint = LinkTable.order2Point(
+        Math.floor(+pointArr.shift()),
+        linkGame.table
+      );
+      const p2: LinkPoint = LinkTable.order2Point(
+        Math.floor(+pointArr.shift()),
+        linkGame.table
+      );
+      pointPairArr.push([p1, p2]);
+    }
+    returnMessage += await checkLick(session, pointPairArr);
+
+    return returnMessage;
+  }
+
+  async function checkLick(
     session: Session,
     pointPairArr: [LinkPoint, LinkPoint][]
   ) {
@@ -183,7 +185,7 @@ async function command(ctx: Context, config: Config) {
       const linkPathArr = truePathInfoArr.map(
         (info: LinkPathInfo) => info.linkPath
       );
-      const img = await linkGameDraw.game(linkGame, linkPathArr);
+      const img = await linkGame.draw.game(linkGame, linkPathArr);
       returnMessage += img;
       returnMessage += addMsgBreak();
       for (const [p1, p2] of removeArr) {
@@ -215,7 +217,7 @@ async function command(ctx: Context, config: Config) {
     if (table.isClear) {
       returnMessage += await linkGame.win(session);
     } else {
-      const resultImg = await linkGameDraw.game(linkGame);
+      const resultImg = await linkGame.draw.game(linkGame);
       returnMessage += resultImg;
       returnMessage += addMsgBreak();
       if (linkGame.combo > 1) {

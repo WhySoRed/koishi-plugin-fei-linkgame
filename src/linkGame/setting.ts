@@ -1,5 +1,5 @@
 import { Context, Session } from "koishi";
-import { LinkGame, LinkGameData } from "./linkGameMethod";
+import { LinkGame, LinkGameSetting } from "./linkGameMethod";
 import { Config } from "../koishi/config";
 import { linkGameTemp } from "../command";
 
@@ -20,14 +20,15 @@ let config: Config;
 
 async function showSetting(session: Session) {
   const cid = session.cid;
-  const linkGameData = await LinkGameData.getorCreate(ctx, cid);
+  config = session.app.config;
+  const linkGameSetting = await LinkGameSetting.getorCreate(ctx, cid);
   return (
     `当前设置：\n` +
-    `每列图案个数：${linkGameData.xLength}\n` +
-    `每行图案个数：${linkGameData.yLength}\n` +
+    `每列图案个数：${linkGameSetting.xLength}\n` +
+    `每行图案个数：${linkGameSetting.yLength}\n` +
     `当前图案库存数：${config.patternLibrary.length}\n` +
-    `是否开启限时模式：${linkGameData.timeLimitOn ? "是" : "否"}\n` +
-    `当前每局图案最大数量：${linkGameData.patternCounts}\n\n` +
+    `是否开启限时模式：${linkGameSetting.timeLimitOn ? "是" : "否"}\n` +
+    `当前每局图案最大数量：${linkGameSetting.patternCounts}\n\n` +
     `查看设置指令请发送\n` +
     `help 连连看.设置`
   );
@@ -78,10 +79,10 @@ async function settingChangeSize(
     return new SettingChangeInfo(false, "高和宽需要是正数才行...");
   if ((xLength * yLength) % 2 !== 0)
     return new SettingChangeInfo(false, "格子总数要是偶数个呀..");
-  const linkGameData = await LinkGameData.getorCreate(ctx, linkGame.cid);
-  linkGameData.xLength = xLength;
-  linkGameData.yLength = yLength;
-  await LinkGameData.update(ctx, linkGameData);
+  const linkGameSetting = await LinkGameSetting.getorCreate(ctx, linkGame.cid);
+  linkGameSetting.xLength = xLength;
+  linkGameSetting.yLength = yLength;
+  await LinkGameSetting.update(ctx, linkGameSetting);
   return new SettingChangeInfo(
     true,
     "尺寸更改成功~，当前尺寸为" + xLength + "x" + yLength
@@ -99,9 +100,9 @@ async function settingChangePatternCounts(
     return new SettingChangeInfo(false, "我准备的图案没有那么多呀...");
   if (patternCounts < 1)
     return new SettingChangeInfo(false, "额...起码得有一种图案吧...");
-  const linkGameData = await LinkGameData.getorCreate(ctx, linkGame.cid);
-  linkGameData.patternCounts = patternCounts;
-  await LinkGameData.update(ctx, linkGameData);
+  const linkGameSetting = await LinkGameSetting.getorCreate(ctx, linkGame.cid);
+  linkGameSetting.patternCounts = patternCounts;
+  await LinkGameSetting.update(ctx, linkGameSetting);
   return new SettingChangeInfo(
     true,
     "图案数更改成功~，当前图案数为" + patternCounts
@@ -109,10 +110,10 @@ async function settingChangePatternCounts(
 }
 
 async function settingChangeTimeLimit(linkGame: LinkGame) {
-  const linkGameData = await LinkGameData.getorCreate(ctx, linkGame.cid);
-  linkGameData.timeLimitOn = !linkGameData.timeLimitOn;
-  await LinkGameData.update(ctx, linkGameData);
-  if (linkGameData.timeLimitOn) {
+  const linkGameSetting = await LinkGameSetting.getorCreate(ctx, linkGame.cid);
+  linkGameSetting.timeLimitOn = !linkGameSetting.timeLimitOn;
+  await LinkGameSetting.update(ctx, linkGameSetting);
+  if (linkGameSetting.timeLimitOn) {
     return new SettingChangeInfo(true, "禅模式关闭~\n限时但是会计算分数哦");
   } else {
     linkGame.startTime = null;
@@ -122,7 +123,7 @@ async function settingChangeTimeLimit(linkGame: LinkGame) {
 }
 
 async function settingReset(linkGame: LinkGame) {
-  const linkGameData = new LinkGameData(linkGame.cid);
-  await LinkGameData.update(ctx, linkGameData);
+  const linkGameSetting = new LinkGameSetting(linkGame.cid);
+  await LinkGameSetting.update(ctx, linkGameSetting);
   return new SettingChangeInfo(true, "重置成功~");
 }
