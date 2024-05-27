@@ -18,7 +18,7 @@ interface Config {
   lineColor?: string;
   blockColor?: string;
   blockShadowColor?: string;
-  pattermType?: string[];
+  patternLibrary?: string[];
 }
 
 const Config: Schema<Config> = Schema.intersect([
@@ -80,7 +80,7 @@ const Config: Schema<Config> = Schema.intersect([
         .role("color")
         .description("格子阴影的颜色")
         .default("#00a5bf"),
-      pattermType: Schema.array(String)
+      patternLibrary: Schema.array(String)
         .role("table")
         .description("图案种类")
         .default([
@@ -126,7 +126,7 @@ const Config: Schema<Config> = Schema.intersect([
         .description("格子阴影的颜色")
         .default("#e1b9ff")
         .disabled(),
-      pattermType: Schema.array(String)
+      patternLibrary: Schema.array(String)
         .role("table")
         .description("图案种类")
         .default([
@@ -172,7 +172,7 @@ const Config: Schema<Config> = Schema.intersect([
         .description("格子阴影的颜色")
         .default("#9270ab")
         .disabled(),
-      pattermType: Schema.array(String)
+      patternLibrary: Schema.array(String)
         .role("table")
         .description("图案种类")
         .default([

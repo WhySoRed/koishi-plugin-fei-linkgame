@@ -1,11 +1,11 @@
 import { Context, Session } from "koishi";
-import { LinkGame, LinkGameData } from "./class";
+import { LinkGame, LinkGameData } from "./linkGameMethod";
 import { Config } from "../koishi/config";
 import { linkGameTemp } from "../command";
 
 export { showSetting, settingChange };
 
-type Setting = "尺寸" | "图案数" | "限时" | "重置";
+type SettingName = "尺寸" | "图案数" | "限时" | "重置";
 class SettingChangeInfo {
   success: boolean;
   message: string;
@@ -25,7 +25,7 @@ async function showSetting(session: Session) {
     `当前设置：\n` +
     `每列图案个数：${linkGameData.xLength}\n` +
     `每行图案个数：${linkGameData.yLength}\n` +
-    `当前图案库存数：${config.pattermType.length}\n` +
+    `当前图案库存数：${config.patternLibrary.length}\n` +
     `是否开启限时模式：${linkGameData.timeLimitOn ? "是" : "否"}\n` +
     `当前每局图案最大数量：${linkGameData.patternCounts}\n\n` +
     `查看设置指令请发送\n` +
@@ -35,31 +35,31 @@ async function showSetting(session: Session) {
 
 async function settingChange(
   session: Session,
-  setting: Setting,
+  settingName: SettingName,
   ...args: string[]
 ) {
   ctx = session.app;
   config = ctx.config;
   const cid = session.cid;
-  const linkGame = await linkGameTemp.getorCreate(cid);
+  const linkGame = await linkGameTemp.getorCreate(session);
 
   if (linkGame.isPlaying) return " 游戏中不可以更改设置哦";
-  if (setting === "尺寸") {
+  if (settingName === "尺寸") {
     const settingChangeInfo = await settingChangeSize(linkGame, ...args);
     return settingChangeInfo.message;
   }
-  if (setting === "图案数") {
+  if (settingName === "图案数") {
     const settingChangeInfo = await settingChangePatternCounts(
       linkGame,
       ...args
     );
     return settingChangeInfo.message;
   }
-  if (setting === "限时") {
+  if (settingName === "限时") {
     const settingChangeInfo = await settingChangeTimeLimit(linkGame);
     return settingChangeInfo.message;
   }
-  if (setting === "重置") {
+  if (settingName === "重置") {
     const settingChangeInfo = await settingReset(linkGame);
     return settingChangeInfo.message;
   }
@@ -96,7 +96,7 @@ async function settingChangePatternCounts(
   if (args.length !== 1) return new SettingChangeInfo(false, "参数数量错误");
   const patternCounts = Math.floor(+args[0]);
   if (isNaN(patternCounts)) return new SettingChangeInfo(false, "参数错误");
-  if (patternCounts > config.pattermType.length)
+  if (patternCounts > config.patternLibrary.length)
     return new SettingChangeInfo(false, "我准备的图案没有那么多呀...");
   if (patternCounts < 1)
     return new SettingChangeInfo(false, "额...起码得有一种图案吧...");

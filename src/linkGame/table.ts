@@ -1,83 +1,12 @@
 import { Context, Random, Session } from "koishi";
 import { Config } from "../koishi/config";
-
-export { LinkGame, LinkPoint, LinkTable, LinkPathInfo, LinkGameData };
+export { LinkPoint, LinkTable, LinkPathInfo };
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
 const IS_OTHER_PATTERN = 2;
 const IS_TARGET = 3;
 type LinkPointJudgement = 0 | 1 | 2 | 3;
-
-class LinkGame {
-  cid:string;
-  isPlaying: boolean;
-  patterns: string[];
-  patternColors: string[];
-  table: LinkTable;
-  lastLinkTime: number;
-  combo: number;
-  startTime: number;
-  timeLimit: number;
-  get timeLeft(): number {
-    return this.timeLimit - (Date.now() - this.startTime);
-  }
-  score: number;
-  lastSession: Session;
-  timeLimitTimer: () => void;
-
-  constructor(cid: string) {
-    this.cid = cid;
-    this.isPlaying = false;
-  }
-
-  newGame(linkGameData: LinkGameData, config: Config) {}
-
-  clear() {
-    this.isPlaying = false;
-    this.patterns = [];
-    this.patternColors = [];
-    this.table = null;
-    this.lastLinkTime = null;
-    this.combo = 0;
-    this.startTime = null;
-    this.timeLimit = null;
-    this.score = 0;
-    this.lastSession = null;
-    this.timeLimitTimer && this.timeLimitTimer();
-  }
-}
-
-class LinkGameData {
-  cid: string;
-  xLength: number;
-  yLength: number;
-  patternCounts: number;
-  timeLimitOn: boolean;
-  maxScore: number;
-  constructor(cid: string) {
-    this.cid = cid;
-    this.xLength = 5;
-    this.yLength = 6;
-    this.patternCounts = 9;
-    this.timeLimitOn = true;
-    this.maxScore = 0;
-  }
-  // 获取数据库数据，没有则创建
-  static async getorCreate(ctx: Context, cid: string) {
-    const linkGameData = (await ctx.database.get("linkGameData", { cid }))[0];
-    if (!linkGameData) {
-      const linkGameData = new LinkGameData(cid);
-      await ctx.database.create("linkGameData", linkGameData);
-      return linkGameData;
-    } else return linkGameData;
-  }
-
-  static async update(ctx: Context, linkGameData: LinkGameData) {
-    await ctx.database.upsert("linkGameData", [linkGameData]);
-    return linkGameData;
-  }
-}
 
 class LinkPoint {
   x: number;
@@ -356,47 +285,6 @@ class LinkTable {
     return this.checkPath(config, p1, p2);
   }
 
-  checkPointArr(
-    config: Config,
-    pointPairArr: [LinkPoint, LinkPoint][]
-  ): LinkPathInfo[] {
-    const pathInfoArr: LinkPathInfo[] = [];
-    // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
-    const existPointArr: LinkPoint[] = [];
-    for (let i = 0; i < pointPairArr.length; i++) {
-      if (
-        existPointArr.find(
-          (point) =>
-            point.x === pointPairArr[i][0].x && point.y === pointPairArr[i][0].y
-        ) ||
-        existPointArr.find(
-          (point) =>
-            point.x === pointPairArr[i][1].x && point.y === pointPairArr[i][1].y
-        )
-      ) {
-        pathInfoArr.push(
-          new LinkPathInfo(
-            pointPairArr[i][0],
-            pointPairArr[i][1],
-            false,
-            null,
-            "选择了已选择的位置"
-          )
-        );
-      } else {
-        const LinkPathInfo = this.checkPoint(
-          config,
-          pointPairArr[i][0],
-          pointPairArr[i][1]
-        );
-        pathInfoArr.push(LinkPathInfo);
-        existPointArr.push(pointPairArr[i][0]);
-        existPointArr.push(pointPairArr[i][1]);
-      }
-    }
-    return pathInfoArr;
-  }
-
   static order2Point(orders: number, table: LinkTable): LinkPoint {
     return new LinkPoint(
       Math.floor(orders / table.yLength) + 1,
@@ -408,3 +296,51 @@ class LinkTable {
     return (point.x - 1) * table.yLength + point.y - 1;
   }
 }
+
+interface LinkTable {
+  checkPointArr(
+    config: Config,
+    pointPairArr: [LinkPoint, LinkPoint][]
+  ): LinkPathInfo[];
+}
+
+LinkTable.prototype.checkPointArr = function (
+  config: Config,
+  pointPairArr: [LinkPoint, LinkPoint][]
+): LinkPathInfo[] {
+  const pathInfoArr: LinkPathInfo[] = [];
+  // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
+  const existPointArr: LinkPoint[] = [];
+  for (let i = 0; i < pointPairArr.length; i++) {
+    if (
+      existPointArr.find(
+        (point) =>
+          point.x === pointPairArr[i][0].x && point.y === pointPairArr[i][0].y
+      ) ||
+      existPointArr.find(
+        (point) =>
+          point.x === pointPairArr[i][1].x && point.y === pointPairArr[i][1].y
+      )
+    ) {
+      pathInfoArr.push(
+        new LinkPathInfo(
+          pointPairArr[i][0],
+          pointPairArr[i][1],
+          false,
+          null,
+          "选择了已选择的位置"
+        )
+      );
+    } else {
+      const LinkPathInfo = this.checkPoint(
+        config,
+        pointPairArr[i][0],
+        pointPairArr[i][1]
+      );
+      pathInfoArr.push(LinkPathInfo);
+      existPointArr.push(pointPairArr[i][0]);
+      existPointArr.push(pointPairArr[i][1]);
+    }
+  }
+  return pathInfoArr;
+};

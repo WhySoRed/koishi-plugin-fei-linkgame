@@ -1,4 +1,4 @@
-import { LinkTable, LinkPoint, LinkGame } from "../class";
+import { LinkTable, LinkPoint, LinkGame } from "../linkGameMethod";
 import { Context, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
 import { Config } from "../../koishi/config";
@@ -208,7 +208,7 @@ async function draw(
 
 async function drawWelcome(ctx: Context, config: Config) {
   const blockSize = config.blockSize;
-  const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
+  const randomPatternArr = new Random().shuffle(config.patternLibrary).slice(0, 4);
   const html: string = `
   <body>
   <div id="clip">

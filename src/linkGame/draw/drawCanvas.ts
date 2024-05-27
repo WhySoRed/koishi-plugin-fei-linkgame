@@ -1,4 +1,4 @@
-import { LinkPoint, LinkGame } from "../class";
+import { LinkPoint, LinkGame } from "../linkGameMethod";
 import { Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from "../../koishi/config";
@@ -247,7 +247,7 @@ async function drawWelcome(koishiCtx: Context, config: Config) {
       [],
     ],
   };
-  const randomPatternArr = new Random().shuffle(config.pattermType).slice(0, 4);
+  const randomPatternArr = new Random().shuffle(config.patternLibrary).slice(0, 4);
   const pattern = [""].concat(randomPatternArr);
   const width = (table.yLength + 2 - 0.8) * blockSize;
   const height = (table.xLength + 2 - 0.8) * blockSize;

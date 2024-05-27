@@ -246,15 +246,15 @@ export async function updateUsage(config: Config) {
   const styleRegExp = /<style[^>]*>([\s\S]*?)<\/style>/g;
   usage = usage.replace(styleRegExp, style);
 
-  if (config.pattermType.length) {
+  if (config.patternLibrary.length) {
     let randomPattern: string[];
-    if (config.pattermType.length >= 4) {
-      randomPattern = Random.shuffle(config.pattermType).slice(0, 4);
+    if (config.patternLibrary.length >= 4) {
+      randomPattern = Random.shuffle(config.patternLibrary).slice(0, 4);
     }
     else {
-      randomPattern = config.pattermType;
+      randomPattern = config.patternLibrary;
       while (randomPattern.length < 4) {
-        randomPattern.push(Random.pick(config.pattermType));
+        randomPattern.push(Random.pick(config.patternLibrary));
       }
     }
     usage = usage.replace(
