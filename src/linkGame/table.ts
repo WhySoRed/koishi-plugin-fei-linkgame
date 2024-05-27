@@ -146,6 +146,14 @@ class LinkTable {
     this.pattern[p2.x][p2.y] = 0;
   }
 
+  removePointPairArr(pointPairArr: [LinkPoint, LinkPoint][]): void {
+    for (let i = 0; i < pointPairArr.length; i++) {
+      this.remove(pointPairArr[i][0], pointPairArr[i][1]);
+    }
+
+  }
+
+
   // 检查是否存在三条直线可以连接的通路
   /**
    *

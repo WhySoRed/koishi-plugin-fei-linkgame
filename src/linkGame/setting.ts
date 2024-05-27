@@ -40,30 +40,29 @@ async function settingChange(
 ) {
   ctx = session.app;
   config = ctx.config;
-  const cid = session.cid;
-  const linkGame = await linkGameTemp.getorCreate(session);
+  const linkGame = linkGameTemp.getorCreate(session);
 
-  if (linkGame.isPlaying) return " 游戏中不可以更改设置哦";
-  if (settingName === "尺寸") {
+  let returnMessage = "";
+
+  if (linkGame.isPlaying) returnMessage = "游戏中不可以更改设置哦";
+  else if (settingName === "尺寸") {
     const settingChangeInfo = await settingChangeSize(linkGame, ...args);
-    return settingChangeInfo.message;
-  }
-  if (settingName === "图案数") {
+    returnMessage = settingChangeInfo.message;
+  } else if (settingName === "图案数") {
     const settingChangeInfo = await settingChangePatternCounts(
       linkGame,
       ...args
     );
-    return settingChangeInfo.message;
-  }
-  if (settingName === "限时") {
+    returnMessage = settingChangeInfo.message;
+  } else if (settingName === "限时") {
     const settingChangeInfo = await settingChangeTimeLimit(linkGame);
-    return settingChangeInfo.message;
-  }
-  if (settingName === "重置") {
+    returnMessage = settingChangeInfo.message;
+  } else if (settingName === "重置") {
     const settingChangeInfo = await settingReset(linkGame);
-    return settingChangeInfo.message;
+    returnMessage = settingChangeInfo.message;
   }
-  return "参数错误";
+  await linkGame.settingChange(ctx);
+  return returnMessage;
 }
 
 async function settingChangeSize(

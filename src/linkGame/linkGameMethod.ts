@@ -32,9 +32,33 @@ class LinkGame {
     this.cid = session.cid;
     this.ctx = session.app;
     this.config = this.ctx.config;
-    this.addMsgBreak = this.config.addBreak ? "<message/>" : "";
+    this.addMsgBreak = this.config.addBreak ? "<message/>" : "\n";
     this.draw = new LinkGameDraw(this.ctx);
     this.isPlaying = false;
+  }
+
+  async settingChange(ctx: Context) {
+    this.setting = await LinkGameData.getorCreate(ctx, this.cid);
+  }
+
+  async welcome() {
+    this.settingChange(this.ctx);
+    const img = await this.draw.welcome();
+    const maxScore = this.setting.maxScore;
+    let returnMessage =
+      img +
+      `一起来玩...\n` +
+      `KOISHI连连看~\n` +
+      `指令一览：\n\n` +
+      `连连看.开始\n` +
+      `连连看.结束\n` +
+      `连连看.重排\n` +
+      `连连看.设置\n` +
+      `连连看.连`;
+    if (maxScore) {
+      returnMessage += `\n\n` + `本对话目前最高分：${maxScore}~`;
+    }
+    return returnMessage;
   }
 
   async newGame(session: Session) {
@@ -76,7 +100,7 @@ class LinkGame {
     }
     await this.newGame(session);
 
-    const img = await this.draw.game(this.config, this);
+    const img = await this.draw.game(this);
     return (
       `游戏开始咯~\n` +
       `大小${this.table.xLength}x${this.table.yLength} 图案数${this.setting.patternCounts}\n` +
@@ -103,13 +127,25 @@ class LinkGame {
     this.lastSession = null;
   }
 
-  async over(text: string) {
+  async gameOver(text: string) {
+    const returnMessage: string =
+      text +
+      (await this.scoreRecord()) +
+      this.addMsgBreak +
+      (await this.draw.over());
     this.clear();
-    return text + (await this.draw.over(this.config));
+    return returnMessage;
+  }
+
+  async end(session: Session) {
+    if (!this.isPlaying) {
+      return "游戏还没开始呢";
+    }
+    return await this.gameOver("游戏自我了断了...\n");
   }
 
   async timeOut(session: Session) {
-    const message = await this.over("时间结束了呀...");
+    const message = await this.gameOver("时间结束了呀...\n");
     try {
       session.send(message);
     } catch (e) {
@@ -124,12 +160,36 @@ class LinkGame {
   }
 
   async scoreRecord() {
+    if (!this.score) return "";
     const linkGameData = this.setting;
     if (linkGameData[0].maxScore < this.score) {
       linkGameData.maxScore = this.score;
       await LinkGameData.update(this.ctx, linkGameData);
       return `本局得分：${this.score}\n新纪录~`;
     } else return `本局得分：${this.score}`;
+  }
+
+  async shuffle(session: Session) {
+    this.lastSession = session;
+    this.combo = 0;
+    if (!this.isPlaying) {
+      return "游戏还没开始呢";
+    }
+    this.table.shuffle();
+    return (
+      "已经重新打乱顺序了~" + this.addMsgBreak + (await this.draw.game(this))
+    );
+  }
+
+  async win(session: Session) {
+    const returnMessage: string =
+      (await this.draw.win()) +
+      this.addMsgBreak +
+      "所有的图案都被消除啦~" +
+      this.addMsgBreak +
+      this.scoreRecord();
+    this.clear();
+    return returnMessage;
   }
 }
 

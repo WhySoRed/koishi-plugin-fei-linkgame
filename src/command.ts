@@ -66,25 +66,8 @@ async function command(ctx: Context, config: Config) {
   }
 
   ctx.command("连连看").action(async ({ session }) => {
-    const cid = session.cid;
-    const img = await linkGameDraw.welcome(config);
-    const maxScore = (await LinkGameData.getorCreate(ctx, cid)).maxScore;
-    let returnMessage =
-      img +
-      addAt(session) +
-      `一起来玩...\n` +
-      `KOISHI连连看~\n` +
-      `指令一览：\n\n` +
-      `连连看.开始\n` +
-      `连连看.结束\n` +
-      `连连看.重排\n` +
-      `连连看.设置\n` +
-      `连连看.连`;
-
-    if (maxScore) {
-      returnMessage += `\n\n` + `本对话目前最高分：${maxScore}~`;
-    }
-    return returnMessage;
+    const linkGame = linkGameTemp.getorCreate(session);
+    return addAt(session) + (await linkGame.welcome());
   });
 
   ctx.command("连连看.设置").action(async ({ session }) => {
@@ -108,41 +91,17 @@ async function command(ctx: Context, config: Config) {
 
   ctx.command("连连看.开始").action(async ({ session }) => {
     const linkGame = linkGameTemp.getorCreate(session);
-    return await linkGame.start(session);
+    return addAt(session) + (await linkGame.start(session));
   });
 
   ctx.command("连连看.结束").action(async ({ session }) => {
     const linkGame = linkGameTemp.getorCreate(session);
-    if (!linkGame.isPlaying) return addAt(session) + "游戏还没开始呢";
-
-    let returnMessage = await linkGame.over("游戏自我了断了...");
-
-    if (linkGame.score) {
-      returnMessage += addMsgBreak();
-      returnMessage += await linkGame.scoreRecord();
-    }
-    return returnMessage;
+    return addAt(session) + (await linkGame.gameOver("游戏自我了断了..."));
   });
 
   ctx.command("连连看.重排").action(async ({ session }) => {
-    let returnMessage = addAt(session);
     const linkGame = linkGameTemp.getorCreate(session);
-    linkGame.lastSession = session;
-    linkGame.combo = 0;
-    const { isPlaying, table } = linkGame;
-
-    if (!isPlaying) {
-      returnMessage += "游戏还没开始呢";
-      return returnMessage;
-    }
-    table.shuffle();
-    const timeLeft = linkGame.timeLeft;
-    const timeLimit = linkGame.timeLimit;
-    const img = await linkGameDraw.game(config, linkGame);
-    returnMessage += "已经重新打乱顺序了~";
-    returnMessage += addMsgBreak();
-    returnMessage += img;
-    return returnMessage;
+    return addAt(session) + (await linkGame.shuffle(session));
   });
 
   ctx
@@ -224,7 +183,7 @@ async function command(ctx: Context, config: Config) {
       const linkPathArr = truePathInfoArr.map(
         (info: LinkPathInfo) => info.linkPath
       );
-      const img = await linkGameDraw.game(config, linkGame, linkPathArr);
+      const img = await linkGameDraw.game(linkGame, linkPathArr);
       returnMessage += img;
       returnMessage += addMsgBreak();
       for (const [p1, p2] of removeArr) {
@@ -254,9 +213,9 @@ async function command(ctx: Context, config: Config) {
     }
 
     if (table.isClear) {
-      returnMessage += await linkGameWIn(session);
+      returnMessage += await linkGame.win(session);
     } else {
-      const resultImg = await linkGameDraw.game(config, linkGame);
+      const resultImg = await linkGameDraw.game(linkGame);
       returnMessage += resultImg;
       returnMessage += addMsgBreak();
       if (linkGame.combo > 1) {
@@ -285,33 +244,6 @@ async function command(ctx: Context, config: Config) {
       }
     }
     linkGame.lastLinkTime = Date.now();
-    return returnMessage;
-  }
-
-  async function linkGameWIn(session: Session) {
-    let returnMessage: string = "";
-
-    const img = await linkGameDraw.win(config);
-    returnMessage += img;
-
-    returnMessage += addMsgBreak();
-    returnMessage += "所有的图案都被消除啦~\n";
-
-    const cid = session.cid;
-    const linkGame = linkGameTemp[cid];
-    if (linkGame?.score) {
-      const linkGameData = await LinkGameData.getorCreate(ctx, cid);
-      if (linkGameData[0].maxScore < linkGame.score) {
-        linkGameData.maxScore = linkGame.score;
-        await LinkGameData.update(ctx, linkGameData);
-        returnMessage += `本局得分：${linkGame.score}\n`;
-        returnMessage += `是新纪录~`;
-      } else returnMessage += `本局得分：${linkGame.score}`;
-    }
-
-    linkGame.isPlaying = false;
-    linkGame.clear();
-
     return returnMessage;
   }
 }

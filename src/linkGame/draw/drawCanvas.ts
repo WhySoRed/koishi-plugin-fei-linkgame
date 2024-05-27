@@ -1,4 +1,5 @@
-import { LinkPoint, LinkGame } from "../linkGameMethod";
+import { LinkGame } from "../linkGameMethod";
+import { LinkPoint, LinkTable } from "../table";
 import { Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
 import { Config } from "../../koishi/config";
@@ -9,13 +10,13 @@ async function draw(
   koishiCtx: Context,
   config: Config,
   linkGame: LinkGame,
+  table: LinkTable,
   linkPathArr?: LinkPoint[][],
 ): Promise<string> {
   const blockSize = config.blockSize;
   const timeStartColor = config.timeStartColor;
   const timeEndColor = config.timeEndColor;
 
-  const table = linkGame.table;
   const patterns = linkGame.patterns;
   const patternColors = linkGame.patternColors;
   const timeLeft = linkGame.timeLeft;
