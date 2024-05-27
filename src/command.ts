@@ -28,10 +28,11 @@ export class LinkGame {
 }
 
 export const linkGameTemp = {
+  data: {} as { [key: string]: LinkGame },
   clear(cid: string) {
     const linkGame = linkGameTemp[cid];
     if (!linkGame) return;
-    linkGame.clear();
+    linkGame.clear&&linkGame.clear();
     delete linkGameTemp[cid];
   },
 
