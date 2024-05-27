@@ -1,10 +1,9 @@
 import { Schema } from "koishi";
 export { Config } 
 
-
 interface Config {
   atUser: boolean;
-  addSpace: boolean;
+  addBreak: boolean;
   sideFree: boolean;
   moreSideFree: boolean;
   maxLink: number;
@@ -25,7 +24,7 @@ interface Config {
 const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     atUser: Schema.boolean().default(false).description("是否at用户"),
-    addSpace: Schema.boolean().default(true).description("是否把图案分多次发送"),
+    addBreak: Schema.boolean().default(true).description("是否把消息分多次发送"),
   }).description("消息设置"),
   Schema.object({
     sideFree: Schema.boolean()

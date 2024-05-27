@@ -1,7 +1,7 @@
 import { LinkTable, LinkPoint, LinkGame } from "../class";
 import { Context, Random } from "koishi";
 import {} from "koishi-plugin-puppeteer";
-import { Config } from "../../koishiConfig";
+import { Config } from "../../koishi/config";
 
 export { draw, drawOver, drawWelcome, drawWin };
 

@@ -1,7 +1,7 @@
-import { Random, Session } from "koishi";
-import { Config } from "../koishiConfig";
+import { Context, Random, Session } from "koishi";
+import { Config } from "../koishi/config";
 
-export { LinkGame, LinkPoint, LinkTable, LinkPathInfo}
+export { LinkGame, LinkPoint, LinkTable, LinkPathInfo, LinkGameData };
 
 const IS_EMPTY = 0;
 const IS_VISITED = 1;
@@ -21,22 +21,57 @@ class LinkGame {
   get timeLeft(): number {
     return this.timeLimit - (Date.now() - this.startTime);
   }
-
-  timeLimitTimer: () => void;
   score: number;
   lastSession: Session;
+  timeLimitTimer: () => void;
 
   clear() {
-    this.timeLimitTimer && this.timeLimitTimer();
-    this.lastLinkTime = null;
     this.isPlaying = false;
-    this.score = 0;
+    this.patterns = [];
+    this.patternColors = [];
+    this.table = null;
+    this.lastLinkTime = null;
     this.combo = 0;
+    this.startTime = null;
     this.timeLimit = null;
+    this.score = 0;
+    this.lastSession = null;
+    this.timeLimitTimer && this.timeLimitTimer();
   }
 }
 
- class LinkPoint {
+class LinkGameData {
+  cid: string;
+  xLength: number;
+  yLength: number;
+  maxPatternTypes: number;
+  timeLimitOn: boolean;
+  maxScore: number;
+  constructor(cid: string) {
+    this.cid = cid;
+    this.xLength = 5;
+    this.yLength = 6;
+    this.maxPatternTypes = 9;
+    this.timeLimitOn = true;
+    this.maxScore = 0;
+  }
+  // 获取数据库数据，没有则创建
+  static async getorCreate(ctx: Context, cid: string) {
+    const linkGameData = (await ctx.database.get("linkGameData", { cid }))[0];
+    if (!linkGameData) {
+      const linkGameData = new LinkGameData(cid);
+      await ctx.database.create("linkGameData", linkGameData);
+      return linkGameData;
+    } else return linkGameData;
+  }
+
+  static async update(ctx: Context, linkGameData: LinkGameData) {
+    await ctx.database.upsert("linkGameData", [linkGameData]);
+    return linkGameData;
+  }
+}
+
+class LinkPoint {
   x: number;
   y: number;
   constructor(x: number, y: number) {
@@ -46,7 +81,7 @@ class LinkGame {
 }
 
 // 作为table.checkPath的返回值
- class LinkPathInfo {
+class LinkPathInfo {
   p1: LinkPoint;
   p2: LinkPoint;
   enableLink: boolean;
@@ -77,7 +112,7 @@ class Node extends LinkPoint {
 }
 
 // 当前的游戏盘
- class LinkTable {
+class LinkTable {
   xLength: number;
   yLength: number;
   maxPatternTypes: number;
@@ -304,7 +339,13 @@ class Node extends LinkPoint {
     )
       return new LinkPathInfo(p1, p2, false, null, "位置超出范围");
     if (this.pattern[p1.x][p1.y] === 0 || this.pattern[p2.x][p2.y] === 0)
-      return new LinkPathInfo(p1, p2, false, null, "选择了一个没有图案的位置...");
+      return new LinkPathInfo(
+        p1,
+        p2,
+        false,
+        null,
+        "选择了一个没有图案的位置..."
+      );
     if (this.pattern[p1.x][p1.y] !== this.pattern[p2.x][p2.y])
       return new LinkPathInfo(p1, p2, false, null, "两个位置的图案不一样...");
 

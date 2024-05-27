@@ -1,7 +1,7 @@
 import { LinkPoint, LinkGame } from "../class";
 import { Random, Context } from "koishi";
 import {} from "koishi-plugin-canvas";
-import { Config } from "../../koishiConfig";
+import { Config } from "../../koishi/config";
 
 export { draw, drawOver, drawWelcome, drawWin };
 

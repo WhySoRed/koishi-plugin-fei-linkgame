@@ -1,6 +1,6 @@
 import { Context } from "koishi";
 import { LinkPoint, LinkGame } from "./class";
-import { Config } from "./../koishiConfig";
+import { Config } from "../koishi/config";
 
 import {
   draw as canvasDraw,

@@ -20,15 +20,14 @@ export async function extendDatabase(ctx: Context) {
     "linkGameData",
     {
       cid: "string",
-      xLength: { type: "unsigned", initial: 5 },
-      yLength: { type: "unsigned", initial: 6 },
-      maxPatternTypes: { type: "unsigned", initial: 9 },
-      timeLimitOn: { type: "boolean", initial: true },
-      maxScore: { type: "unsigned", initial: 0 },
+      xLength: "unsigned",
+      yLength: "unsigned",
+      maxPatternTypes: "unsigned",
+      timeLimitOn: "boolean",
+      maxScore: "unsigned",
     },
     {
       primary: ["cid"],
     }
   );
-
 }
