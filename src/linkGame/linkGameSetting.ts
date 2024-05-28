@@ -1,9 +1,10 @@
 import { Context, Session } from "koishi";
-import { LinkGame, LinkGameSetting } from "./linkGameMethod";
+import { LinkGame, getLinkGame } from "./linkGame";
 import { Config } from "../koishi/config";
-import { linkGameTemp } from "../command";
+export { showSetting, settingChange, LinkGameSetting };
 
-export { showSetting, settingChange };
+let ctx: Context;
+let config: Config;
 
 type SettingName = "尺寸" | "图案数" | "限时" | "重置";
 class SettingChangeInfo {
@@ -14,9 +15,35 @@ class SettingChangeInfo {
     this.message = message;
   }
 }
-
-let ctx: Context;
-let config: Config;
+class LinkGameSetting {
+  cid: string;
+  xLength: number;
+  yLength: number;
+  patternCounts: number;
+  timeLimitOn: boolean;
+  constructor(cid: string) {
+    this.cid = cid;
+    this.xLength = 5;
+    this.yLength = 6;
+    this.patternCounts = 9;
+    this.timeLimitOn = true;
+  }
+  // 获取数据库数据，没有则创建
+  static async getorCreate(ctx: Context, cid: string) {
+    const linkGameSetting = (
+      await ctx.database.get("linkGameSetting", { cid })
+    )[0];
+    if (!linkGameSetting) {
+      const linkGameSetting = new LinkGameSetting(cid);
+      await ctx.database.create("linkGameSetting", linkGameSetting);
+      return linkGameSetting;
+    } else return linkGameSetting;
+  }
+  static async update(ctx: Context, linkGameSetting: LinkGameSetting) {
+    await ctx.database.upsert("linkGameSetting", [linkGameSetting]);
+    return linkGameSetting;
+  }
+}
 
 async function showSetting(session: Session) {
   const cid = session.cid;
@@ -41,7 +68,7 @@ async function settingChange(
 ) {
   ctx = session.app;
   config = ctx.config;
-  const linkGame = linkGameTemp.getorCreate(session);
+  const linkGame = getLinkGame(session);
 
   let returnMessage = "";
 

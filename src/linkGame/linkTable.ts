@@ -1,4 +1,4 @@
-import { Context, Random, Session } from "koishi";
+import { Random } from "koishi";
 import { Config } from "../koishi/config";
 export { LinkPoint, LinkTable, LinkPathInfo };
 
@@ -15,27 +15,57 @@ class LinkPoint {
     this.x = x;
     this.y = y;
   }
+  static equal(p1: LinkPoint, p2: LinkPoint): boolean {
+    return p1.x === p2.x && p1.y === p2.y;
+  }
 }
 
-// 作为table.checkPath的返回值
+type linkFailReason =
+  | "NaNPositon"
+  | "Coincide"
+  | "OutRange"
+  | "Void"
+  | "UnPair"
+  | "NoWay";
+
+// 作为table.checkPath与table.checkPointPair的返回值
 class LinkPathInfo {
   p1: LinkPoint;
   p2: LinkPoint;
   enableLink: boolean;
-  linkPath?: LinkPoint[];
-  text?: string;
+  linkPath: LinkPoint[];
+  reason?: linkFailReason;
+  get text() {
+    switch (this?.reason) {
+      case "NaNPositon":
+        return "位置不是数字";
+      case "Coincide":
+        return "位置重复";
+      case "OutRange":
+        return "位置超出范围";
+      case "Void":
+        return "选择了一个没有图案的位置...";
+      case "UnPair":
+        return "两个位置的图案不一样...";
+      case "NoWay":
+        return "这两个位置无法连接...";
+      default:
+        return "?";
+    }
+  }
+
   constructor(
     p1: LinkPoint,
     p2: LinkPoint,
     enableLink: boolean,
-    linkPath?: LinkPoint[],
-    text?: string
+    linkPath: LinkPoint[],
+    reason?: linkFailReason
   ) {
     this.p1 = p1;
     this.p2 = p2;
     this.enableLink = enableLink;
     this.linkPath = linkPath;
-    this.text = text;
+    this.reason = reason;
   }
 }
 class Node extends LinkPoint {
@@ -50,8 +80,10 @@ class Node extends LinkPoint {
 
 // 当前的游戏盘
 class LinkTable {
+  config: Config;
   xLength: number;
   yLength: number;
+  pointUsed: LinkPoint[] = [];
   patternCounts: number;
   pattern: number[][];
   get isClear(): boolean {
@@ -63,10 +95,17 @@ class LinkTable {
     return true;
   }
 
-  constructor(xLength: number, yLength: number, patternCounts: number) {
+  constructor(
+    config: Config,
+    xLength: number,
+    yLength: number,
+    patternCounts: number
+  ) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
+    this.config = config;
     this.xLength = xLength;
     this.yLength = yLength;
+    this.pointUsed = [];
     this.patternCounts = patternCounts;
     this.pattern = this.init();
   }
@@ -150,17 +189,16 @@ class LinkTable {
     for (let i = 0; i < pointPairArr.length; i++) {
       this.remove(pointPairArr[i][0], pointPairArr[i][1]);
     }
-
   }
-
 
   // 检查是否存在三条直线可以连接的通路
   /**
    *
    */
-  checkPath(config: Config, p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
+  checkPath(p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
     // 最大折线数
-    let maxLevel = config.maxLink;
+    let maxLevel = this.config.maxLink;
+    const config = this.config;
     if (
       config.moreSideFree &&
       ((p1.x === 1 && p2.x === this.xLength) ||
@@ -193,20 +231,14 @@ class LinkTable {
 
     nodeQueue.push(new Node(p1.x, p1.y)); // 将起点加入队列
 
-    let linkPathInfo = new LinkPathInfo(
-      p1,
-      p2,
-      false,
-      null,
-      "这两个位置无法连接..."
-    );
+    let info = new LinkPathInfo(p1, p2, false, null, "NoWay");
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
-    const checkTarget = (
+    function checkTarget(
       x: number,
       y: number,
       currentNode: Node
-    ): LinkPointJudgement => {
+    ): LinkPointJudgement {
       if (this.pattern[x][y] === 0) {
         if (visited[x][y]) return IS_VISITED;
         visited[x][y] = true;
@@ -224,9 +256,11 @@ class LinkTable {
       }
       linkPath.push(new LinkPoint(node.x, node.y));
       linkPath.reverse().push(new LinkPoint(p2.x, p2.y));
-      linkPathInfo = new LinkPathInfo(p1, p2, true, linkPath, "找到通路");
+      info = new LinkPathInfo(p1, p2, true, linkPath);
+      this.pointUsed.push(p1);
+      this.pointUsed.push(p2);
       return IS_TARGET;
-    };
+    }
 
     // 广度优先搜索
     end: while (nodeQueue.length) {
@@ -260,14 +294,19 @@ class LinkTable {
         else continue;
       }
     }
-    return linkPathInfo;
+    return info;
   }
 
-  checkPoint(config: Config, p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
+  checkPointPair(p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
     if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y))
-      return new LinkPathInfo(p1, p2, false, null, "位置不是数字");
-    if (p1.x === p2.x && p1.y === p2.y)
-      return new LinkPathInfo(p1, p2, false, null, "位置重复");
+      return new LinkPathInfo(p1, p2, false, null, "NaNPositon");
+    if (
+      this.pointUsed.some(
+        (point) => LinkPoint.equal(point, p1) || LinkPoint.equal(point, p2)
+      ) ||
+      LinkPoint.equal(p1, p2)
+    )
+      return new LinkPathInfo(p1, p2, false, null, "Coincide");
     if (
       p1.x < 1 ||
       p1.x > this.xLength ||
@@ -278,19 +317,40 @@ class LinkTable {
       p2.y < 1 ||
       p2.y > this.yLength
     )
-      return new LinkPathInfo(p1, p2, false, null, "位置超出范围");
+      return new LinkPathInfo(p1, p2, false, null, "OutRange");
     if (this.pattern[p1.x][p1.y] === 0 || this.pattern[p2.x][p2.y] === 0)
-      return new LinkPathInfo(
-        p1,
-        p2,
-        false,
-        null,
-        "选择了一个没有图案的位置..."
-      );
+      return new LinkPathInfo(p1, p2, false, null, "Void");
     if (this.pattern[p1.x][p1.y] !== this.pattern[p2.x][p2.y])
-      return new LinkPathInfo(p1, p2, false, null, "两个位置的图案不一样...");
+      return new LinkPathInfo(p1, p2, false, null, "UnPair");
+    return this.checkPath(p1, p2);
+  }
 
-    return this.checkPath(config, p1, p2);
+  // 将传入的位置对数组转化为根据成功和连击切分的数组
+  async linkCheck(
+    pointPairArr: [LinkPoint, LinkPoint][]
+  ): Promise<LinkPathInfo[][]> {
+    const infoArrArr: LinkPathInfo[][] = [];
+    let infoArr: LinkPathInfo[] = [];
+    for (const [p1, p2] of pointPairArr) {
+      const info = this.checkPointPair(p1, p2);
+      if (info.enableLink) {
+        infoArr.push(info);
+      } else {
+        infoArrArr.push(infoArr);
+        if (info.reason === "NoWay") {
+          this.removePointPairArr(infoArr.map((info) => [info.p1, info.p2]));
+          const reCheckinfo = this.checkPointPair(p1, p2);
+          if (reCheckinfo.enableLink) {
+            infoArr = [reCheckinfo];
+            continue;
+          }
+        }
+        infoArrArr.push([info]);
+        infoArr = [];
+      }
+    }
+    infoArrArr.push(infoArr);
+    return infoArrArr;
   }
 
   static order2Point(orders: number, table: LinkTable): LinkPoint {
@@ -304,51 +364,3 @@ class LinkTable {
     return (point.x - 1) * table.yLength + point.y - 1;
   }
 }
-
-interface LinkTable {
-  checkPointArr(
-    config: Config,
-    pointPairArr: [LinkPoint, LinkPoint][]
-  ): LinkPathInfo[];
-}
-
-LinkTable.prototype.checkPointArr = function (
-  config: Config,
-  pointPairArr: [LinkPoint, LinkPoint][]
-): LinkPathInfo[] {
-  const pathInfoArr: LinkPathInfo[] = [];
-  // 避免耍赖在一次指令中多次选择同一个位置的图案导致bug
-  const existPointArr: LinkPoint[] = [];
-  for (let i = 0; i < pointPairArr.length; i++) {
-    if (
-      existPointArr.find(
-        (point) =>
-          point.x === pointPairArr[i][0].x && point.y === pointPairArr[i][0].y
-      ) ||
-      existPointArr.find(
-        (point) =>
-          point.x === pointPairArr[i][1].x && point.y === pointPairArr[i][1].y
-      )
-    ) {
-      pathInfoArr.push(
-        new LinkPathInfo(
-          pointPairArr[i][0],
-          pointPairArr[i][1],
-          false,
-          null,
-          "选择了已选择的位置"
-        )
-      );
-    } else {
-      const LinkPathInfo = this.checkPoint(
-        config,
-        pointPairArr[i][0],
-        pointPairArr[i][1]
-      );
-      pathInfoArr.push(LinkPathInfo);
-      existPointArr.push(pointPairArr[i][0]);
-      existPointArr.push(pointPairArr[i][1]);
-    }
-  }
-  return pathInfoArr;
-};

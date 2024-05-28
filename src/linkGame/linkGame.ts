@@ -1,9 +1,76 @@
 import { Context, Random, Session } from "koishi";
 import { Config } from "../koishi/config";
 import { LinkGameDraw } from "./draw";
-import { LinkTable } from "./linkTable";
+import { LinkTable, LinkPoint, LinkPathInfo } from "./linkTable";
+import { LinkGameSetting } from "./linkGameSetting";
+export {
+  LinkGame,
+  getLinkGame,
+  disposeLinkGame,
+  initLinkGame,
+};
 
-export { LinkGame, LinkGameSetting };
+interface LinkGameList {
+  [key: string]: LinkGame;
+}
+
+const linkGameTemp = {
+  list: {} as LinkGameList,
+  ctx: Context,
+  linkGameDraw: LinkGameDraw,
+
+  init(ctx: Context) {
+    this.ctx = ctx;
+    this.linkGameDraw = new LinkGameDraw(this.ctx);
+    return this;
+  },
+
+  create(session: Session): LinkGame {
+    const cid = session.cid;
+    const linkGame = new LinkGame(session);
+    linkGame.draw = this.linkGameDraw;
+    this.list[cid] = linkGame;
+    return linkGame;
+  },
+
+  getorCreate(session: Session): LinkGame {
+    const cid = session.cid;
+    const linkGame = this.list[cid];
+    if (!linkGame) return this.create(session);
+    return linkGame;
+  },
+
+  get(cid: string) {
+    return this.list[cid];
+  },
+
+  clear(cid: string) {
+    const linkGame = this.list[cid];
+    if (!linkGame) return false;
+    linkGame.clear && linkGame.clear();
+    return true;
+  },
+
+  clearAll() {
+    if (!this.list) return false;
+    for (const key in this.list) {
+      this.clear(key);
+    }
+    return true;
+  },
+};
+
+function initLinkGame(ctx: Context) {
+  return linkGameTemp.init(ctx);
+}
+
+function getLinkGame(session: Session) {
+  return linkGameTemp.getorCreate(session);
+}
+
+function disposeLinkGame() {
+  return linkGameTemp.clearAll();
+}
 
 class LinkGame {
   cid: string;
@@ -33,7 +100,6 @@ class LinkGame {
     this.ctx = session.app;
     this.config = this.ctx.config;
     this.addMsgBreak = this.config.addBreak ? "<message/>" : "\n";
-    this.draw = new LinkGameDraw(this.ctx);
     this.isPlaying = false;
   }
 
@@ -80,7 +146,7 @@ class LinkGame {
     for (let i = 0; i < patternCounts; i++) {
       this.patternColors.push(this.config.lineColor);
     }
-    this.table = new LinkTable(xLength, yLength, patternCounts);
+    this.table = new LinkTable(this.config, xLength, yLength, patternCounts);
     if (timeLimitOn) {
       this.startTime = Date.now();
       this.timeLimit = (xLength * yLength * this.config.timeLimitEachPair) / 2;
@@ -100,7 +166,7 @@ class LinkGame {
     }
     await this.newGame(session);
 
-    const img = await this.draw.game(this);
+    const img = await this.draw.game(this, this.table);
     return (
       `游戏开始咯~\n` +
       `大小${this.table.xLength}x${this.table.yLength} 图案数${this.setting.patternCounts}\n` +
@@ -116,15 +182,10 @@ class LinkGame {
   clear() {
     this.timeLimitTimer && this.timeLimitTimer();
     this.isPlaying = false;
-    this.patterns = [];
-    this.patternColors = [];
-    this.table = null;
-    this.lastLinkTime = null;
-    this.combo = 0;
     this.startTime = null;
     this.timeLimit = null;
+    this.combo = 0;
     this.score = 0;
-    this.lastSession = null;
   }
 
   async gameOver(text: string) {
@@ -137,7 +198,7 @@ class LinkGame {
     return returnMessage;
   }
 
-  async end(session: Session) {
+  async stop(session: Session) {
     if (!this.isPlaying) {
       return "游戏还没开始呢";
     }
@@ -177,7 +238,9 @@ class LinkGame {
     }
     this.table.shuffle();
     return (
-      "已经重新打乱顺序了~" + this.addMsgBreak + (await this.draw.game(this))
+      "已经重新打乱顺序了~" +
+      this.addMsgBreak +
+      (await this.draw.game(this, this.table))
     );
   }
 
@@ -191,35 +254,83 @@ class LinkGame {
     this.clear();
     return returnMessage;
   }
+
+  async link(session: Session, args: string[]) {
+    if (!this.isPlaying) return;
+    let returnMessage = "";
+
+    if (args.length % 2 !== 0) {
+      returnMessage += "参数数量有问题呀";
+      returnMessage += this.addMsgBreak;
+      args.pop();
+    }
+
+    // 把传入的数拆分成点对
+    const pointArr = [...args];
+    const pointPairArr: [LinkPoint, LinkPoint][] = [];
+    while (pointArr.length > 1) {
+      const p1: LinkPoint = LinkTable.order2Point(
+        Math.floor(+pointArr.shift()),
+        this.table
+      );
+      const p2: LinkPoint = LinkTable.order2Point(
+        Math.floor(+pointArr.shift()),
+        this.table
+      );
+      pointPairArr.push([p1, p2]);
+    }
+    returnMessage += await this.checkLick(session, pointPairArr);
+
+    return returnMessage;
+  }
+
+  async comboTime(count: number): Promise<string> {
+    if (!this.isPlaying || !this.setting.timeLimitOn) return;
+    let addScore = 0;
+    for (let i = 0; i < count; i++) {
+      addScore += 10 * 2 ** this.combo;
+      this.combo++;
+    }
+    this.lastLinkTime = Date.now();
+    this.score += addScore;
+    return `${this.combo}连击！ 得分 ${addScore}` + this.addMsgBreak;
+  }
+
+  async checkLick(session: Session, pointPairArr: [LinkPoint, LinkPoint][]) {
+    let returnMessage = "";
+    const table = this.table;
+    const pathInfoArrArr = await table.linkCheck(pointPairArr);
+
+    for (const pathInfoArr of pathInfoArrArr) {
+      if (pathInfoArr[0].enableLink) {
+        returnMessage += this.draw.game(
+          this,
+          table,
+          pathInfoArr.map((info: LinkPathInfo) => info.linkPath)
+        );
+        returnMessage += this.addMsgBreak;
+        returnMessage += await this.comboTime(pathInfoArr.length);
+      } else {
+        returnMessage +=
+          LinkTable.point2Order(pathInfoArr[0].p1, table) +
+          "与" +
+          LinkTable.point2Order(pathInfoArr[0].p2, table) +
+          pathInfoArr[0].text +
+          this.addMsgBreak;
+        this.combo = 0;
+      }
+    }
+
+    if (table.isClear) {
+      returnMessage += await this.win(session);
+      return returnMessage;
+    } else {
+      returnMessage += "当前得分 " + this.score;
+      return returnMessage;
+    }
+  }
 }
 
-class LinkGameSetting {
-  cid: string;
-  xLength: number;
-  yLength: number;
-  patternCounts: number;
-  timeLimitOn: boolean;
-  constructor(cid: string) {
-    this.cid = cid;
-    this.xLength = 5;
-    this.yLength = 6;
-    this.patternCounts = 9;
-    this.timeLimitOn = true;
-  }
-  // 获取数据库数据，没有则创建
-  static async getorCreate(ctx: Context, cid: string) {
-    const linkGameSetting = (await ctx.database.get("linkGameSetting", { cid }))[0];
-    if (!linkGameSetting) {
-      const linkGameSetting = new LinkGameSetting(cid);
-      await ctx.database.create("linkGameSetting", linkGameSetting);
-      return linkGameSetting;
-    } else return linkGameSetting;
-  }
-  static async update(ctx: Context, linkGameSetting: LinkGameSetting) {
-    await ctx.database.upsert("linkGameSetting", [linkGameSetting]);
-    return linkGameSetting;
-  }
-}
 
 class LinkGameData {
   cid: string;
