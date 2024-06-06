@@ -1,14 +1,14 @@
 import { Random, Context } from "koishi";
-import { Config } from "../../koishi/config";
+import { config } from "../../koishi/config";
 import { LinkGame } from "../linkGame";
 import { LinkPoint, LinkTable } from "../linkTable";
 import {} from "koishi-plugin-canvas";
+
 
 export { draw, drawOver, drawWelcome, drawWin };
 
 async function draw(
   koishiCtx: Context,
-  config: Config,
   linkGame: LinkGame,
   table: LinkTable,
   linkPathArr?: LinkPoint[][],
@@ -191,7 +191,7 @@ async function draw(
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawWin(koishiCtx: Context, config: Config) {
+async function drawWin(koishiCtx: Context) {
   const blockSize = config.blockSize;
   const canvas = await koishiCtx.canvas.createCanvas(
     4 * blockSize,
@@ -231,7 +231,7 @@ async function drawWin(koishiCtx: Context, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawWelcome(koishiCtx: Context, config: Config) {
+async function drawWelcome(koishiCtx: Context) {
   const blockSize = config.blockSize;
   const table = {
     xLength: 6,
@@ -363,7 +363,7 @@ async function drawWelcome(koishiCtx: Context, config: Config) {
   return `<img src="${await canvas.toDataURL("image/png")}" />`;
 }
 
-async function drawOver(koishiCtx: Context, config: Config) {
+async function drawOver(koishiCtx: Context) {
   const blockSize = config.blockSize;
   const canvas = await koishiCtx.canvas.createCanvas(
     4 * blockSize,

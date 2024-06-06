@@ -1,10 +1,11 @@
 import { Context, Session } from "koishi";
 import { LinkGame, getLinkGame } from "./linkGame";
-import { Config } from "../koishi/config";
+import { config } from "../koishi/config";
+import {} from "../koishi/database";
 export { showSetting, settingChange, LinkGameSetting };
 
 let ctx: Context;
-let config: Config;
+//let config: Config;
 
 type SettingName = "尺寸" | "图案数" | "限时" | "重置";
 class SettingChangeInfo {
@@ -47,7 +48,7 @@ class LinkGameSetting {
 
 async function showSetting(session: Session) {
   const cid = session.cid;
-  config = session.app.config;
+  ctx = session.app;
   const linkGameSetting = await LinkGameSetting.getorCreate(ctx, cid);
   return (
     `当前设置：\n` +
@@ -67,7 +68,7 @@ async function settingChange(
   ...args: string[]
 ) {
   ctx = session.app;
-  config = ctx.config;
+  //config = ctx.config;
   const linkGame = getLinkGame(session);
 
   let returnMessage = "";

@@ -1,5 +1,5 @@
 import { Context } from "koishi";
-import { Config } from "./koishi/config";
+import { Config, updateConfig } from "./koishi/config";
 import { initDatabase } from "./koishi/database";
 import { updateUsage } from "./koishi/usage";
 import { registerCommand } from "./command";
@@ -17,8 +17,9 @@ export * from "./koishi/usage";
 export function apply(ctx: Context, config: Config) {
   ctx.on("ready", async () => {
     await updateUsage(config);
+    await updateConfig(config);
     await initDatabase(ctx);
-    await registerCommand(ctx, config);
+    await registerCommand(ctx);
     initLinkGame(ctx);
   });
 

@@ -1,8 +1,6 @@
 import { Context } from "koishi";
 import { LinkGame } from "./linkGame";
 import { LinkPoint, LinkTable } from "./linkTable";
-import { Config } from "../koishi/config";
-
 import {
   draw as cDraw,
   drawWin as cDrawWin,
@@ -19,7 +17,6 @@ import {
 export class LinkGameDraw {
   pptrOn: boolean;
   ctx: Context;
-  config: Config;
   game: (linkGame: LinkGame,linkTable:LinkTable, linkPathArr?: LinkPoint[][]) => Promise<string>;
   win: () => Promise<string>;
   welcome: () => Promise<string>;
@@ -27,28 +24,27 @@ export class LinkGameDraw {
 
   constructor(ctx?: Context) {
     this.ctx = ctx;
-    this.config = ctx.config;
     this.pptrOn = ctx.puppeteer ? true : false;
 
     this.game = (linkGame, linkTable,linkPathArr) => {
       return this.pptrOn
-        ? pDraw(this.ctx, this.config, linkGame, linkTable, linkPathArr)
-        : cDraw(this.ctx, this.config, linkGame, linkTable, linkPathArr);
+        ? pDraw(this.ctx,  linkGame, linkTable, linkPathArr)
+        : cDraw(this.ctx,  linkGame, linkTable, linkPathArr);
     };
     this.win = (...args) => {
       return this.pptrOn
-        ? pDrawWin(this.ctx, this.config)
-        : cDrawWin(this.ctx, this.config);
+        ? pDrawWin(this.ctx)
+        : cDrawWin(this.ctx);
     };
     this.welcome = (...args) => {
       return this.pptrOn
-        ? pDrawWelcome(this.ctx, this.config)
-        : cDrawWelcome(this.ctx, this.config);
+        ? pDrawWelcome(this.ctx)
+        : cDrawWelcome(this.ctx);
     };
     this.over = (...args) => {
       return this.pptrOn
-        ? pDrawOver(this.ctx, this.config)
-        : cDrawOver(this.ctx, this.config);
+        ? pDrawOver(this.ctx)
+        : cDrawOver(this.ctx);
     };
   }
 }

@@ -1,10 +1,10 @@
 import { Context, Session, h } from "koishi";
-import { Config } from "./koishi/config";
+import { config } from "./koishi/config";
 import { getLinkGame } from "./linkGame/linkGame";
 import { showSetting, settingChange } from "./linkGame/linkGameSetting";
 export { registerCommand };
 
-async function registerCommand(ctx: Context, config: Config) {
+async function registerCommand(ctx: Context) {
   // 根据设置确定是否需要添加at
   function addAt(session: Session) {
     if (config.atUser && !session.event.channel.type) {

@@ -1,5 +1,5 @@
 import { Random } from "koishi";
-import { Config } from "../koishi/config";
+import { config } from "../koishi/config";
 export { LinkPoint, LinkTable, LinkPathInfo };
 
 const IS_EMPTY = 0;
@@ -80,7 +80,6 @@ class Node extends LinkPoint {
 
 // 当前的游戏盘
 class LinkTable {
-  config: Config;
   xLength: number;
   yLength: number;
   pointUsed: LinkPoint[] = [];
@@ -96,13 +95,11 @@ class LinkTable {
   }
 
   constructor(
-    config: Config,
     xLength: number,
     yLength: number,
     patternCounts: number
   ) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
-    this.config = config;
     this.xLength = xLength;
     this.yLength = yLength;
     this.pointUsed = [];
@@ -197,8 +194,7 @@ class LinkTable {
    */
   checkPath(p1: LinkPoint, p2: LinkPoint): LinkPathInfo {
     // 最大折线数
-    let maxLevel = this.config.maxLink;
-    const config = this.config;
+    let maxLevel = config.maxLink;
     if (
       config.moreSideFree &&
       ((p1.x === 1 && p2.x === this.xLength) ||

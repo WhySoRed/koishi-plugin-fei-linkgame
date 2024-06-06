@@ -1,5 +1,5 @@
 import { Schema } from "koishi";
-export { Config } 
+export { Config, config, updateConfig } 
 
 interface Config {
   atUser: boolean;
@@ -194,3 +194,9 @@ const Config: Schema<Config> = Schema.intersect([
     }),
   ]),
 ]);
+
+let config: Config;
+
+async function updateConfig(newConfig:Config) {
+  config = newConfig;
+}

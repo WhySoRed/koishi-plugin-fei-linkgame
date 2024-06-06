@@ -1,5 +1,5 @@
 import { Context, Random, Session } from "koishi";
-import { Config } from "../koishi/config";
+import { config } from "../koishi/config";
 import { LinkGameDraw } from "./draw";
 import { LinkTable, LinkPoint, LinkPathInfo } from "./linkTable";
 import { LinkGameSetting } from "./linkGameSetting";
@@ -75,7 +75,6 @@ function disposeLinkGame() {
 class LinkGame {
   cid: string;
   ctx: Context;
-  config: Config;
   setting: LinkGameSetting;
   data: LinkGameData;
   addMsgBreak: string;
@@ -98,8 +97,7 @@ class LinkGame {
   constructor(session: Session) {
     this.cid = session.cid;
     this.ctx = session.app;
-    this.config = this.ctx.config;
-    this.addMsgBreak = this.config.addBreak ? "<message/>" : "\n";
+    this.addMsgBreak = config.addBreak ? "<message/>" : "\n";
     this.isPlaying = false;
   }
 
@@ -109,6 +107,7 @@ class LinkGame {
 
   async welcome() {
     this.settingChange(this.ctx);
+    this.data = await LinkGameData.getorCreate(this.ctx, this.cid);
     const img = await this.draw.welcome();
     const maxScore = this.data.maxScore;
     let returnMessage =
@@ -129,7 +128,6 @@ class LinkGame {
 
   async newGame(session: Session) {
     this.ctx = session.app;
-    this.config = this.ctx.config;
     this.setting = await LinkGameSetting.getorCreate(session.app, this.cid);
 
     this.lastSession = session;
@@ -140,16 +138,16 @@ class LinkGame {
 
     this.isPlaying = true;
     this.patterns = Random.shuffle(
-      this.config.patternLibrary as string[]
+      config.patternLibrary as string[]
     ).slice(0, patternCounts);
     this.patternColors = [];
     for (let i = 0; i < patternCounts; i++) {
-      this.patternColors.push(this.config.lineColor);
+      this.patternColors.push(config.lineColor);
     }
-    this.table = new LinkTable(this.config, xLength, yLength, patternCounts);
+    this.table = new LinkTable( xLength, yLength, patternCounts);
     if (timeLimitOn) {
       this.startTime = Date.now();
-      this.timeLimit = (xLength * yLength * this.config.timeLimitEachPair) / 2;
+      this.timeLimit = (xLength * yLength * config.timeLimitEachPair) / 2;
       this.timeLimitTimer = session.app.setTimeout(
         async () => this.timeOut(session),
         this.timeLimit
@@ -161,7 +159,7 @@ class LinkGame {
     if (this.isPlaying) {
       return "游戏已经开始了";
     }
-    if (this.setting.patternCounts > this.config.patternLibrary.length) {
+    if (this.setting.patternCounts > config.patternLibrary.length) {
       return "现在图案种类比库存多...请更改设置";
     }
     await this.newGame(session);

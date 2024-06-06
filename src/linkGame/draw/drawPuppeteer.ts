@@ -1,14 +1,13 @@
 import { Context, Random } from "koishi";
-import { Config } from "../../koishi/config";
+import { config } from "../../koishi/config";
 import { LinkGame } from "../linkGame";
-import { LinkPoint,LinkTable } from "../linkTable";
+import { LinkPoint, LinkTable } from "../linkTable";
 import {} from "koishi-plugin-puppeteer";
 
 export { draw, drawOver, drawWelcome, drawWin };
 
 async function draw(
   ctx: Context,
-  config: Config,
   linkGame: LinkGame,
   table: LinkTable,
   linkPathArr?: LinkPoint[][]
@@ -207,9 +206,11 @@ async function draw(
   return img;
 }
 
-async function drawWelcome(ctx: Context, config: Config) {
+async function drawWelcome(ctx: Context) {
   const blockSize = config.blockSize;
-  const randomPatternArr = new Random().shuffle(config.patternLibrary).slice(0, 4);
+  const randomPatternArr = new Random()
+    .shuffle(config.patternLibrary)
+    .slice(0, 4);
   const html: string = `
   <body>
   <div id="clip">
@@ -307,7 +308,7 @@ async function drawWelcome(ctx: Context, config: Config) {
   return img;
 }
 
-async function drawWin(ctx: Context, config: Config) {
+async function drawWin(ctx: Context) {
   const blockSize = config.blockSize;
   const html: string = `
   <body>
@@ -367,7 +368,7 @@ async function drawWin(ctx: Context, config: Config) {
   return img;
 }
 
-async function drawOver(ctx: Context, config: Config) {
+async function drawOver(ctx: Context) {
   const blockSize = config.blockSize;
   const html = `
   <body>
