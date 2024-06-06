@@ -1,4 +1,4 @@
-import { Random } from "koishi";
+import { Random,clone } from "koishi";
 import { config } from "../koishi/config";
 export { LinkPoint, LinkTable, LinkPathInfo };
 
@@ -94,11 +94,7 @@ class LinkTable {
     return true;
   }
 
-  constructor(
-    xLength: number,
-    yLength: number,
-    patternCounts: number
-  ) {
+  constructor(xLength: number, yLength: number, patternCounts: number) {
     if ((xLength * yLength) % 2 !== 0) throw new Error("总格数必须为偶数");
     this.xLength = xLength;
     this.yLength = yLength;
@@ -230,11 +226,11 @@ class LinkTable {
     let info = new LinkPathInfo(p1, p2, false, null, "NoWay");
 
     // 搜索函数，如果是空则加入节点，如果是图案则确定是否是目标图案
-    function checkTarget(
+    const checkTarget = (
       x: number,
       y: number,
       currentNode: Node
-    ): LinkPointJudgement {
+    ): LinkPointJudgement => {
       if (this.pattern[x][y] === 0) {
         if (visited[x][y]) return IS_VISITED;
         visited[x][y] = true;
@@ -256,7 +252,7 @@ class LinkTable {
       this.pointUsed.push(p1);
       this.pointUsed.push(p2);
       return IS_TARGET;
-    }
+    };
 
     // 广度优先搜索
     end: while (nodeQueue.length) {
@@ -325,17 +321,19 @@ class LinkTable {
   async linkCheck(
     pointPairArr: [LinkPoint, LinkPoint][]
   ): Promise<LinkPathInfo[][]> {
+    const tempTable: LinkTable = new LinkTable(this.xLength, this.yLength, this.patternCounts);
+    tempTable.pattern = clone(this.pattern);
     const infoArrArr: LinkPathInfo[][] = [];
     let infoArr: LinkPathInfo[] = [];
     for (const [p1, p2] of pointPairArr) {
-      const info = this.checkPointPair(p1, p2);
+      const info = tempTable.checkPointPair(p1, p2);
       if (info.enableLink) {
         infoArr.push(info);
       } else {
         infoArrArr.push(infoArr);
         if (info.reason === "NoWay") {
-          this.removePointPairArr(infoArr.map((info) => [info.p1, info.p2]));
-          const reCheckinfo = this.checkPointPair(p1, p2);
+          tempTable.removePointPairArr(infoArr.map((info) => [info.p1, info.p2]));
+          const reCheckinfo = tempTable.checkPointPair(p1, p2);
           if (reCheckinfo.enableLink) {
             infoArr = [reCheckinfo];
             continue;
@@ -345,7 +343,7 @@ class LinkTable {
         infoArr = [];
       }
     }
-    infoArrArr.push(infoArr);
+    if (infoArr.length > 0) infoArrArr.push(infoArr);
     return infoArrArr;
   }
 

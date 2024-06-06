@@ -16,7 +16,7 @@ async function registerCommand(ctx: Context) {
   ctx.command("连连看").action(async ({ session }) => {
     const linkGame = getLinkGame(session);
     return addAt(session) + (await linkGame.welcome());
-  });
+  }).usage("来玩连连看吧~");
 
   ctx.command("连连看.设置").action(async ({ session }) => {
     return addAt(session) + (await showSetting(session));
@@ -24,7 +24,7 @@ async function registerCommand(ctx: Context) {
 
   ctx.command("连连看.设置.尺寸").action(async ({ session, args }) => {
     return addAt(session) + (await settingChange(session, "尺寸", ...args));
-  });
+  }).usage("设置连连看的棋盘大小");
 
   ctx.command("连连看.设置.图案数").action(async ({ session, args }) => {
     return addAt(session) + (await settingChange(session, "图案数", ...args));

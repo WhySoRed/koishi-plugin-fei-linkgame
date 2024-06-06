@@ -38,12 +38,13 @@ const Config: Schema<Config> = Schema.intersect([
       .default(10000)
       .description("限时模式中每对方块的限时(毫秒)"),
     comboTime: Schema.number()
-      .default(4000)
+      .default(3000)
       .description("限时模式中连击的时间(毫秒)"),
   }).description("规则设置"),
   Schema.object({
-    theme: Schema.union(["自定义", "繁花", "星空"])
+    theme: Schema.union(["请选择一个主题","自定义", "繁花", "星空"])
       .description("主题")
+      .default("请选择一个主题")
       .required(),
     timeStartColor: Schema.string()
       .role("color")

@@ -158,6 +158,8 @@ export let usage = `
 可以在koishi上玩连连看~
 <br>
 小心不要沉迷哦...
+<br><br>
+初次使用时请在下方<strong style="color:#de3163">外观设置</strong>选择一个主题
 `;
 
 export async function updateUsage(config: Config) {
