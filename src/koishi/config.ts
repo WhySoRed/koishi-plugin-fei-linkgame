@@ -38,7 +38,7 @@ const Config: Schema<Config> = Schema.intersect([
       .default(10000)
       .description("限时模式中每对方块的限时(毫秒)"),
     comboTime: Schema.number()
-      .default(3000)
+      .default(4000)
       .description("限时模式中连击的时间(毫秒)"),
   }).description("规则设置"),
   Schema.object({

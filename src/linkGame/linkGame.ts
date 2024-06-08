@@ -96,15 +96,16 @@ class LinkGame {
     this.isPlaying = false;
   }
 
-  async settingChange(ctx: Context) {
+  async gameSettingInit(ctx: Context) {
+    this.data = await LinkGameData.getorCreate(this.ctx, this.cid);
     this.setting = await LinkGameSetting.getorCreate(ctx, this.cid);
   }
 
   async welcome() {
-    await this.settingChange(this.ctx);
+    await this.gameSettingInit(this.ctx);
     this.data = await LinkGameData.getorCreate(this.ctx, this.cid);
     const img = await this.draw.welcome();
-    const maxScore = this.data.maxScore;
+    const maxScore = this.data.maxScore || 0;
     let returnMessage =
       img +
       `一起来玩...\n` +
@@ -116,7 +117,7 @@ class LinkGame {
       `连连看.设置\n` +
       `连连看.连`;
     if (maxScore) {
-      returnMessage += `\n\n` + `本对话目前最高分：${maxScore}~`;
+      returnMessage += `\n\n` + `本对话目前最高分：${maxScore}分~`;
     }
     return returnMessage;
   }
@@ -152,7 +153,8 @@ class LinkGame {
   }
 
   async start(session: Session) {
-    await this.settingChange(this.ctx);
+    await this.gameSettingInit(this.ctx);
+
     if (this.isPlaying) {
       return "游戏已经开始了";
     }
@@ -218,7 +220,8 @@ class LinkGame {
   async scoreRecord() {
     if (!this.score) return "";
     const linkGameData = this.data;
-    if (linkGameData[0].maxScore < this.score) {
+    if (!linkGameData.maxScore) linkGameData.maxScore = 0;
+    if (linkGameData.maxScore < this.score) {
       linkGameData.maxScore = this.score;
       await LinkGameData.update(this.ctx, linkGameData);
       return `本局得分：${this.score}\n新纪录~`;
@@ -245,7 +248,7 @@ class LinkGame {
       this.addMsgBreak +
       "所有的图案都被消除啦~" +
       this.addMsgBreak +
-      await this.scoreRecord();
+      (await this.scoreRecord());
     this.clear();
     return returnMessage;
   }
@@ -281,6 +284,9 @@ class LinkGame {
 
   async comboTime(count: number): Promise<string> {
     if (!this.isPlaying || !this.setting.timeLimitOn) return;
+    if (Date.now() - this.lastLinkTime > config.comboTime * count)
+      this.combo = 0;
+
     let addScore = 0;
     this.combo = this.combo || 0;
     this.score = this.score || 0;
@@ -325,7 +331,7 @@ class LinkGame {
       return returnMessage;
     } else {
       returnMessage += await this.draw.game(this, table);
-      returnMessage += this.addMsgBreak;  
+      returnMessage += this.addMsgBreak;
       returnMessage += "当前得分 " + this.score;
       return returnMessage;
     }

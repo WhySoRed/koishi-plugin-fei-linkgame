@@ -29,7 +29,7 @@ export async function initDatabase(ctx: Context) {
     "linkGameData",
     {
       cid: "string",
-      maxScore: "unsigned",
+      maxScore: { type: "unsigned", initial: 0 },
     },
     {
       primary: ["cid"],

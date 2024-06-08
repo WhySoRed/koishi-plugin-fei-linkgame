@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-fei-linkgame",
   "description": "连连看，但是koishi",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "homepage": "https://github.com/WhySoRed/koishi-plugin-fei-linkgame",
@@ -16,7 +16,7 @@
     "plugin"
   ],
   "peerDependencies": {
-    "koishi": "4.17.6"
+    "koishi": "^4.17.6"
   },
   "koishi": {
     "services": {

@@ -90,7 +90,7 @@ async function settingChange(
     const settingChangeInfo = await settingReset(linkGame);
     returnMessage = settingChangeInfo.message;
   }
-  await linkGame.settingChange(ctx);
+  await linkGame.gameSettingInit(ctx);
   return returnMessage;
 }
 

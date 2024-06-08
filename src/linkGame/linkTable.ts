@@ -1,4 +1,4 @@
-import { Random,clone } from "koishi";
+import { Random, clone } from "koishi";
 import { config } from "../koishi/config";
 export { LinkPoint, LinkTable, LinkPathInfo };
 
@@ -321,7 +321,11 @@ class LinkTable {
   async linkCheck(
     pointPairArr: [LinkPoint, LinkPoint][]
   ): Promise<LinkPathInfo[][]> {
-    const tempTable: LinkTable = new LinkTable(this.xLength, this.yLength, this.patternCounts);
+    const tempTable: LinkTable = new LinkTable(
+      this.xLength,
+      this.yLength,
+      this.patternCounts
+    );
     tempTable.pattern = clone(this.pattern);
     const infoArrArr: LinkPathInfo[][] = [];
     let infoArr: LinkPathInfo[] = [];
@@ -330,16 +334,19 @@ class LinkTable {
       if (info.enableLink) {
         infoArr.push(info);
       } else {
-        infoArrArr.push(infoArr);
+        if (infoArr.length > 0) infoArrArr.push(infoArr);
         if (info.reason === "NoWay") {
-          tempTable.removePointPairArr(infoArr.map((info) => [info.p1, info.p2]));
+          tempTable.removePointPairArr(
+            infoArr.map((info) => [info.p1, info.p2])
+          );
           const reCheckinfo = tempTable.checkPointPair(p1, p2);
           if (reCheckinfo.enableLink) {
             infoArr = [reCheckinfo];
             continue;
           }
         }
-        infoArrArr.push([info]);
+        infoArr = [info];
+        infoArrArr.push(infoArr);
         infoArr = [];
       }
     }

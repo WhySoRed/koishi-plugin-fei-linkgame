@@ -26,7 +26,7 @@ async function registerCommand(ctx: Context) {
     return addAt(session) + (await settingChange(session, "尺寸", ...args));
   }).usage("设置连连看的棋盘大小");
 
-  ctx.command("连连看.设置.图案数").action(async ({ session, args }) => {
+  ctx.command("连连看.设置.图案种类数").action(async ({ session, args }) => {
     return addAt(session) + (await settingChange(session, "图案数", ...args));
   });
   ctx.command("连连看.设置.限时").action(async ({ session }) => {
